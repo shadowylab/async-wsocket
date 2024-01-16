@@ -1,0 +1,27 @@
+[package]
+name = "async-wsocket"
+version = "0.1.0"
+edition = "2021"
+description = "Async WebSocket library"
+authors = ["Yuki Kishimoto <yukikishimoto@protonmail.com>"]
+homepage = "https://github.com/yukibtc/async-wsocket"
+repository = "https://github.com/yukibtc/async-wsocket.git"
+license = "MIT"
+readme = "README.md"
+keywords = ["async", "tokio", "wasm", "websocket"]
+
+[dependencies]
+async-utility = "0.1"
+futures-util = { version = "0.3", default-features = false, features = ["std", "sink"] }
+thiserror = "1.0"
+url-fork = { version = "3.0", default-features = false, features = ["std"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["net", "time"] }
+tokio-rustls = "0.24"
+tokio-socks = "0.5"
+tokio-tungstenite = { version = "0.20", features = ["rustls-tls-webpki-roots"] }
+webpki-roots = "0.25"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-ws = "0.1"
