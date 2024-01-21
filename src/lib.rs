@@ -6,7 +6,7 @@
 #![forbid(unsafe_code)]
 
 pub use futures_util;
-pub use url_fork as url;
+pub use url;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;

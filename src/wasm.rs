@@ -9,7 +9,7 @@ use async_utility::time;
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use thiserror::Error;
-use url_fork::Url;
+use url::Url;
 use wasm_ws::{WebSocket, WsErr, WsMessage, WsStream};
 
 type Sink = SplitSink<WsStream, WsMessage>;

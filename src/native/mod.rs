@@ -18,7 +18,7 @@ use tokio_rustls::TlsConnector;
 use tokio_tungstenite::tungstenite::Error as WsError;
 pub use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
-use url_fork::{ParseError, Url};
+use url::{ParseError, Url};
 
 type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type Sink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
