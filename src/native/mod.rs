@@ -13,7 +13,8 @@ use futures_util::StreamExt;
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_rustls::client::TlsStream;
-use tokio_rustls::rustls::{ClientConfig, OwnedTrustAnchor, RootCertStore, ServerName};
+use tokio_rustls::rustls::pki_types::ServerName;
+use tokio_rustls::rustls::{ClientConfig, RootCertStore};
 use tokio_rustls::TlsConnector;
 use tokio_tungstenite::tungstenite::Error as WsError;
 pub use tokio_tungstenite::tungstenite::Message;
@@ -106,19 +107,14 @@ async fn connect_proxy(
 
 async fn connect_with_tls(stream: TcpStream, url: &Url) -> Result<TlsStream<TcpStream>, Error> {
     let mut root_cert_store = RootCertStore::empty();
-    root_cert_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
-        OwnedTrustAnchor::from_subject_spki_name_constraints(
-            ta.subject,
-            ta.spki,
-            ta.name_constraints,
-        )
-    }));
+    root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
     let config = ClientConfig::builder()
-        .with_safe_defaults()
         .with_root_certificates(root_cert_store)
         .with_no_client_auth();
     let connector = TlsConnector::from(Arc::new(config));
     let domain = url.domain().ok_or(Error::InvalidDNSName)?;
-    let domain = ServerName::try_from(domain).map_err(|_| Error::InvalidDNSName)?;
+    let domain = ServerName::try_from(domain)
+        .map_err(|_| Error::InvalidDNSName)?
+        .to_owned();
     Ok(connector.connect(domain, stream).await?)
 }
