@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["async", "tokio", "wasm", "websocket"]
 
 [dependencies]
-async-utility = "0.1"
+async-utility = "0.2"
 futures-util = { version = "0.3", default-features = false, features = ["std", "sink"] }
 thiserror = "1.0"
 url = { version = "2.5", default-features = false }
