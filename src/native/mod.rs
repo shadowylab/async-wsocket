@@ -22,8 +22,8 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use url::{ParseError, Url};
 
 type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
-type Sink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
-type Stream = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
+pub type Sink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
+pub type Stream = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
 
 mod socks;
 

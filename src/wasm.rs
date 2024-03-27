@@ -12,8 +12,8 @@ use thiserror::Error;
 use url::Url;
 use wasm_ws::{WebSocket, WsErr, WsMessage, WsStream};
 
-type Sink = SplitSink<WsStream, WsMessage>;
-type Stream = SplitStream<WsStream>;
+pub type Sink = SplitSink<WsStream, WsMessage>;
+pub type Stream = SplitStream<WsStream>;
 
 #[derive(Debug, Error)]
 pub enum Error {
