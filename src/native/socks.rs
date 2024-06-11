@@ -9,9 +9,10 @@ use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
 use tokio_socks::IntoTargetAddr;
 
-pub(crate) struct TpcSocks5Stream;
+pub(crate) struct TcpSocks5Stream;
 
-impl TpcSocks5Stream {
+impl TcpSocks5Stream {
+    #[inline]
     pub async fn connect<'a>(
         proxy: SocketAddr,
         dest: impl IntoTargetAddr<'a>,

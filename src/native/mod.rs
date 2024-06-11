@@ -4,117 +4,199 @@
 //! Native
 
 use std::net::SocketAddr;
-use std::sync::Arc;
+use std::ops::DerefMut;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use std::time::Duration;
 
+#[cfg(feature = "tor")]
+use arti_client::DataStream;
 use async_utility::time;
 use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::StreamExt;
+use futures_util::{Sink as SinkTrait, Stream as StreamTrait, StreamExt};
 use thiserror::Error;
 use tokio::net::TcpStream;
-use tokio_rustls::client::TlsStream;
-use tokio_rustls::rustls::pki_types::ServerName;
-use tokio_rustls::rustls::{ClientConfig, RootCertStore};
-use tokio_rustls::TlsConnector;
 use tokio_tungstenite::tungstenite::Error as WsError;
 pub use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use url::{ParseError, Url};
 
-type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
-pub type Sink = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>;
-pub type Stream = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
-
 mod socks;
+#[cfg(feature = "tor")]
+mod tor;
 
-use self::socks::TpcSocks5Stream;
+use self::socks::TcpSocks5Stream;
+use crate::ConnectionMode;
 
 #[derive(Debug, Error)]
 pub enum Error {
     /// I/O error
-    #[error("io error: {0}")]
+    #[error(transparent)]
     IO(#[from] std::io::Error),
     /// Ws error
-    #[error("ws error: {0}")]
+    #[error(transparent)]
     Ws(#[from] WsError),
-    #[error("socks error: {0}")]
+    /// Socks error
+    #[error(transparent)]
     Socks(#[from] tokio_socks::Error),
+    /// Tor error
+    #[cfg(feature = "tor")]
+    #[error(transparent)]
+    Tor(#[from] tor::Error),
+    /// Url parse error
+    #[error(transparent)]
+    Url(#[from] ParseError),
     /// Timeout
     #[error("timeout")]
     Timeout,
     /// Invalid DNS name
     #[error("invalid DNS name")]
     InvalidDNSName,
-    /// Url parse error
-    #[error("impossible to parse URL: {0}")]
-    Url(#[from] ParseError),
+}
+
+pub enum WebSocket {
+    Std(WebSocketStream<MaybeTlsStream<TcpStream>>),
+    #[cfg(feature = "tor")]
+    Tor(WebSocketStream<MaybeTlsStream<DataStream>>),
+}
+
+pub enum Sink {
+    Std(SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>),
+    #[cfg(feature = "tor")]
+    Tor(SplitSink<WebSocketStream<MaybeTlsStream<DataStream>>, Message>),
+}
+
+impl SinkTrait<Message> for Sink {
+    type Error = Error;
+
+    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        match self.deref_mut() {
+            Self::Std(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
+        }
+    }
+
+    fn start_send(mut self: Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
+        match self.deref_mut() {
+            Self::Std(s) => Pin::new(s).start_send(item).map_err(Into::into),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => Pin::new(s).start_send(item).map_err(Into::into),
+        }
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        match self.deref_mut() {
+            Self::Std(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
+        }
+    }
+
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        match self.deref_mut() {
+            Self::Std(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
+        }
+    }
+}
+
+pub enum Stream {
+    Std(SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>),
+    #[cfg(feature = "tor")]
+    Tor(SplitStream<WebSocketStream<MaybeTlsStream<DataStream>>>),
+}
+
+impl StreamTrait for Stream {
+    type Item = Result<Message, Error>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.deref_mut() {
+            Self::Std(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::Std(s) => s.size_hint(),
+            #[cfg(feature = "tor")]
+            Self::Tor(s) => s.size_hint(),
+        }
+    }
 }
 
 pub async fn connect(
     url: &Url,
-    proxy: Option<SocketAddr>,
-    timeout: Option<Duration>,
+    mode: ConnectionMode,
+    timeout: Duration,
 ) -> Result<(Sink, Stream), Error> {
-    let stream = match proxy {
-        Some(proxy) => connect_proxy(url, proxy, timeout).await?,
-        None => connect_direct(url, timeout).await?,
+    let stream: WebSocket = match mode {
+        ConnectionMode::Direct => connect_direct(url, timeout).await?,
+        ConnectionMode::Proxy(proxy) => connect_proxy(url, proxy, timeout).await?,
+        #[cfg(feature = "tor")]
+        ConnectionMode::Tor => connect_tor(url, timeout).await?,
     };
-    Ok(stream.split())
+
+    match stream {
+        WebSocket::Std(stream) => {
+            let (tx, rx) = stream.split();
+            Ok((Sink::Std(tx), Stream::Std(rx)))
+        }
+        #[cfg(feature = "tor")]
+        WebSocket::Tor(stream) => {
+            let (tx, rx) = stream.split();
+            Ok((Sink::Tor(tx), Stream::Tor(rx)))
+        }
+    }
 }
 
-async fn connect_direct(url: &Url, timeout: Option<Duration>) -> Result<WebSocket, Error> {
-    let timeout = timeout.unwrap_or(Duration::from_secs(60));
+async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
     let (stream, _) = time::timeout(
         Some(timeout),
-        tokio_tungstenite::connect_async(url.to_string()),
+        tokio_tungstenite::connect_async(url.as_str()),
     )
     .await
     .ok_or(Error::Timeout)??;
-    Ok(stream)
+    Ok(WebSocket::Std(stream))
 }
 
 async fn connect_proxy(
     url: &Url,
     proxy: SocketAddr,
-    timeout: Option<Duration>,
+    timeout: Duration,
 ) -> Result<WebSocket, Error> {
-    let timeout = timeout.unwrap_or(Duration::from_secs(60));
-    let addr: String = match url.host_str() {
-        Some(host) => match url.port_or_known_default() {
-            Some(port) => format!("{host}:{port}"),
-            None => return Err(Error::Url(ParseError::EmptyHost)),
-        },
-        None => return Err(Error::Url(ParseError::InvalidPort)),
-    };
+    let host: &str = url.host_str().ok_or(Error::Url(ParseError::EmptyHost))?;
+    let port: u16 = url
+        .port_or_known_default()
+        .ok_or(Error::Url(ParseError::InvalidPort))?;
+    let addr: String = format!("{host}:{port}");
 
-    let conn = TpcSocks5Stream::connect(proxy, addr.clone()).await?;
-    let conn = match connect_with_tls(conn, url).await {
-        Ok(stream) => MaybeTlsStream::Rustls(stream),
-        Err(_) => {
-            let conn = TpcSocks5Stream::connect(proxy, addr).await?;
-            MaybeTlsStream::Plain(conn)
-        }
-    };
-
+    let conn: TcpStream = TcpSocks5Stream::connect(proxy, addr).await?;
     let (stream, _) = time::timeout(
         Some(timeout),
-        tokio_tungstenite::client_async(url.to_string(), conn),
+        tokio_tungstenite::client_async_tls(url.as_str(), conn),
     )
     .await
     .ok_or(Error::Timeout)??;
-    Ok(stream)
+    Ok(WebSocket::Std(stream))
 }
 
-async fn connect_with_tls(stream: TcpStream, url: &Url) -> Result<TlsStream<TcpStream>, Error> {
-    let mut root_cert_store = RootCertStore::empty();
-    root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-    let config = ClientConfig::builder()
-        .with_root_certificates(root_cert_store)
-        .with_no_client_auth();
-    let connector = TlsConnector::from(Arc::new(config));
-    let domain = url.domain().ok_or(Error::InvalidDNSName)?;
-    let domain = ServerName::try_from(domain)
-        .map_err(|_| Error::InvalidDNSName)?
-        .to_owned();
-    Ok(connector.connect(domain, stream).await?)
+#[cfg(feature = "tor")]
+async fn connect_tor(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
+    let host: &str = url.host_str().ok_or(Error::Url(ParseError::EmptyHost))?;
+    let port: u16 = url
+        .port_or_known_default()
+        .ok_or(Error::Url(ParseError::InvalidPort))?;
+
+    let conn: DataStream = tor::connect(host, port).await?;
+    let (stream, _) = time::timeout(
+        Some(timeout),
+        tokio_tungstenite::client_async_tls(url.as_str(), conn),
+    )
+    .await
+    .ok_or(Error::Timeout)??;
+    Ok(WebSocket::Tor(stream))
 }

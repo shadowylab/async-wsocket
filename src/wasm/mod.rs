@@ -44,8 +44,7 @@ pub enum Error {
     Timeout,
 }
 
-pub async fn connect(url: &Url, timeout: Option<Duration>) -> Result<(Sink, Stream), Error> {
-    let timeout = timeout.unwrap_or(Duration::from_secs(60));
+pub async fn connect(url: &Url, timeout: Duration) -> Result<(Sink, Stream), Error> {
     let (_ws, stream) = time::timeout(Some(timeout), WebSocket::connect(url))
         .await
         .ok_or(Error::Timeout)??;

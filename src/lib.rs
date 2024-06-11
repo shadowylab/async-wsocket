@@ -4,7 +4,9 @@
 //! Async WebSocket
 
 #![forbid(unsafe_code)]
+#![cfg_attr(feature = "default", doc = include_str!("../README.md"))]
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -21,16 +23,30 @@ pub use self::native::{Error, Message as WsMessage, Sink, Stream};
 #[cfg(target_arch = "wasm32")]
 pub use self::wasm::{Error, Sink, Stream, WsMessage};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ConnectionMode {
+    /// Direct
+    #[default]
+    Direct,
+    /// Custom proxy
+    #[cfg(not(target_arch = "wasm32"))]
+    Proxy(SocketAddr),
+    /// Embedded tor client
+    #[cfg(feature = "tor")]
+    #[cfg(not(target_arch = "wasm32"))]
+    Tor,
+}
+
 /// Connect
 ///
 /// **Proxy is ignored for WASM targets!**
 pub async fn connect(
     url: &Url,
-    _proxy: Option<SocketAddr>,
-    timeout: Option<Duration>,
+    _mode: ConnectionMode,
+    timeout: Duration,
 ) -> Result<(Sink, Stream), Error> {
     #[cfg(not(target_arch = "wasm32"))]
-    let (tx, rx) = self::native::connect(url, _proxy, timeout).await?;
+    let (tx, rx) = self::native::connect(url, _mode, timeout).await?;
 
     #[cfg(target_arch = "wasm32")]
     let (tx, rx) = self::wasm::connect(url, timeout).await?;
