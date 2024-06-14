@@ -25,3 +25,6 @@ webpki-roots = "0.26"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-ws = "0.2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros"] }
