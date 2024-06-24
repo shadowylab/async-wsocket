@@ -1,7 +1,7 @@
 // Copyright (c) 2022-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-//! Native Network
+//! Native
 
 use std::net::SocketAddr;
 use std::sync::Arc;

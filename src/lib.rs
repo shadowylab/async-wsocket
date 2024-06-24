@@ -10,8 +10,6 @@ use std::time::Duration;
 
 pub use futures_util;
 pub use url::{self, Url};
-#[cfg(target_arch = "wasm32")]
-pub use wasm_ws::WsMessage;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;
@@ -21,7 +19,7 @@ pub mod wasm;
 #[cfg(not(target_arch = "wasm32"))]
 pub use self::native::{Error, Message as WsMessage, Sink, Stream};
 #[cfg(target_arch = "wasm32")]
-pub use self::wasm::{Error, Sink, Stream};
+pub use self::wasm::{Error, Sink, Stream, WsMessage};
 
 /// Connect
 ///
