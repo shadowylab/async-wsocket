@@ -44,7 +44,6 @@ dependencies = [
  "tokio-tungstenite",
  "url",
  "wasm-bindgen",
- "wasm-bindgen-futures",
  "web-sys",
  "webpki-roots",
 ]

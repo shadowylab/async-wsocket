@@ -9,12 +9,11 @@
 
 use std::time::Duration;
 
-use async_utility::time;
+use async_utility::{thread, time};
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use thiserror::Error;
 use url::Url;
-use wasm_bindgen_futures::spawn_local;
 
 mod error;
 mod event;
@@ -55,12 +54,11 @@ pub async fn connect(url: &Url, timeout: Option<Duration>) -> Result<(Sink, Stre
 
 /// Helper function to reduce code bloat
 pub(crate) fn notify(pharos: SharedPharos<WsEvent>, evt: WsEvent) {
-    let notify = async move {
+    let _ = thread::spawn(async move {
         pharos
             .notify(evt)
             .await
             .map_err(|e| unreachable!("{:?}", e))
             .unwrap(); // only happens if we closed it.
-    };
-    spawn_local(notify);
+    });
 }
