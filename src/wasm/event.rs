@@ -44,21 +44,17 @@ impl WsEvent {
 }
 
 /// An event holding information about how/why the connection was closed.
+///
+/// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close).
 // We use this wrapper because the web_sys version isn't Send and pharos requires events
 // to be Send.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseEvent {
     /// The close code.
-    ///
-    /// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close).
     pub code: u16,
     /// The reason why the connection was closed.
-    ///
-    /// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close).
     pub reason: String,
     /// Whether the connection was closed cleanly.
-    ///
-    /// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close).
     pub was_clean: bool,
 }
 

@@ -88,15 +88,6 @@ impl TryFrom<MessageEvent> for WsMessage {
     }
 }
 
-impl From<WsMessage> for Vec<u8> {
-    fn from(msg: WsMessage) -> Self {
-        match msg {
-            WsMessage::Text(string) => string.into(),
-            WsMessage::Binary(data) => data,
-        }
-    }
-}
-
 impl From<Vec<u8>> for WsMessage {
     fn from(vec: Vec<u8>) -> Self {
         WsMessage::Binary(vec)

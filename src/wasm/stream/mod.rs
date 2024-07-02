@@ -159,7 +159,6 @@ impl WsStream {
     /// ## Caveats
     /// If you call `set_onopen`, `set_onerror`, `set_onmessage` or `set_onclose` on this, you will overwrite
     /// the event listeners from `ws_stream_wasm`, and things will break.
-    //
     pub fn wrapped(&self) -> &WebSocket {
         &self.ws
     }
@@ -173,7 +172,6 @@ impl fmt::Debug for WsStream {
 
 impl Drop for WsStream {
     // We don't block here, just tell the browser to close the connection and move on.
-    //
     fn drop(&mut self) {
         match self.ready_state() {
             Ok(WsState::Closing) | Ok(WsState::Closed) => {}
@@ -206,12 +204,10 @@ impl Stream for WsStream {
 
     // Currently requires an unfortunate copy from Js memory to WASM memory. Hopefully one
     // day we will be able to receive the MessageEvt directly in WASM.
-    //
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Once the queue is empty, check the state of the connection.
         // When it is closing or closed, no more messages will arrive, so
         // return Poll::Ready( None )
-        //
         if self.queue.borrow().is_empty() {
             *self.waker.borrow_mut() = Some(cx.waker().clone());
 
@@ -230,7 +226,6 @@ impl Sink<WsMessage> for WsStream {
     type Error = WsError;
 
     // Web API does not really seem to let us check for readiness, other than the connection state.
-    //
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         match self.ready_state()? {
             WsState::Connecting => {
@@ -252,7 +247,6 @@ impl Sink<WsMessage> for WsStream {
                 //
                 // So if this returns an error, we will return ConnectionNotOpen. In principle,
                 // we just checked that it's open, but this guarantees correctness.
-                //
                 match item {
                     WsMessage::Binary(d) => self
                         .ws

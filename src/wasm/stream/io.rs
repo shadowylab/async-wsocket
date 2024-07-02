@@ -6,7 +6,7 @@ use std::io::{self, ErrorKind};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use futures::prelude::{Sink, Stream};
+use futures::{Sink, Stream};
 
 use crate::wasm::{WsError, WsStream};
 
@@ -26,7 +26,7 @@ impl Stream for WsStreamIo {
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Pin::new(&mut self.inner).poll_next(cx).map(|opt| {
             opt.map(|msg| {
-                msg.map(|m| m.into())
+                msg.map(|m| m.into_data())
                     .map_err(|e| io::Error::new(ErrorKind::Other, e))
             })
         })

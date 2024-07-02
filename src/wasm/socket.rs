@@ -34,13 +34,13 @@ impl WebSocket {
     /// Connect to the server. The future will resolve when the connection has been established with a successful WebSocket
     /// handshake.
     pub async fn connect(url: &Url) -> Result<(Self, WsStream), WsError> {
-        let ws = match WebSysSocket::new(url.as_str()) {
+        let ws: Arc<WebSysSocket> = match WebSysSocket::new(url.as_str()) {
             Ok(ws) => Arc::new(ws),
             Err(e) => {
                 let de: &DomException = e.unchecked_ref();
                 return match de.code() {
                     DomException::SYNTAX_ERR => Err(WsError::InvalidUrl {
-                        supplied: url.as_ref().to_string(),
+                        supplied: url.to_string(),
                     }),
                     code => {
                         if code == 0 {
