@@ -31,6 +31,8 @@ mod tor;
 use self::socks::TcpSocks5Stream;
 use crate::ConnectionMode;
 
+type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
+
 #[derive(Debug, Error)]
 pub enum Error {
     /// I/O error
@@ -59,15 +61,15 @@ pub enum Error {
 }
 
 pub enum WebSocket {
-    Std(WebSocketStream<MaybeTlsStream<TcpStream>>),
+    Std(WsStream<TcpStream>),
     #[cfg(feature = "tor")]
-    Tor(WebSocketStream<MaybeTlsStream<DataStream>>),
+    Tor(WsStream<DataStream>),
 }
 
 pub enum Sink {
-    Std(SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>),
+    Std(SplitSink<WsStream<TcpStream>, Message>),
     #[cfg(feature = "tor")]
-    Tor(SplitSink<WebSocketStream<MaybeTlsStream<DataStream>>, Message>),
+    Tor(SplitSink<WsStream<DataStream>, Message>),
 }
 
 impl SinkTrait<Message> for Sink {
@@ -107,9 +109,9 @@ impl SinkTrait<Message> for Sink {
 }
 
 pub enum Stream {
-    Std(SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>),
+    Std(SplitStream<WsStream<TcpStream>>),
     #[cfg(feature = "tor")]
-    Tor(SplitStream<WebSocketStream<MaybeTlsStream<DataStream>>>),
+    Tor(SplitStream<WsStream<DataStream>>),
 }
 
 impl StreamTrait for Stream {
