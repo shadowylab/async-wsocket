@@ -3,6 +3,7 @@
 
 //! Native
 
+#[cfg(feature = "socks")]
 use std::net::SocketAddr;
 use std::ops::DerefMut;
 use std::pin::Pin;
@@ -21,10 +22,12 @@ pub use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use url::{ParseError, Url};
 
+#[cfg(feature = "socks")]
 mod socks;
 #[cfg(feature = "tor")]
 mod tor;
 
+#[cfg(feature = "socks")]
 use self::socks::TcpSocks5Stream;
 use crate::ConnectionMode;
 
@@ -37,6 +40,7 @@ pub enum Error {
     #[error(transparent)]
     Ws(#[from] WsError),
     /// Socks error
+    #[cfg(feature = "socks")]
     #[error(transparent)]
     Socks(#[from] tokio_socks::Error),
     /// Tor error
@@ -135,6 +139,7 @@ pub async fn connect(
 ) -> Result<(Sink, Stream), Error> {
     let stream: WebSocket = match mode {
         ConnectionMode::Direct => connect_direct(url, timeout).await?,
+        #[cfg(feature = "socks")]
         ConnectionMode::Proxy(proxy) => connect_proxy(url, proxy, timeout).await?,
         #[cfg(feature = "tor")]
         ConnectionMode::Tor => connect_tor(url, timeout).await?,
@@ -163,6 +168,7 @@ async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error
     Ok(WebSocket::Std(stream))
 }
 
+#[cfg(feature = "socks")]
 async fn connect_proxy(
     url: &Url,
     proxy: SocketAddr,

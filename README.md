@@ -10,7 +10,7 @@ use async_wsocket::{ConnectionMode, Url};
 #[tokio::main]
 async fn main() {
     let url = Url::parse("wss://example.com").unwrap();
-    // Use `ConnectionMode::Tor` to use the embedded tor client (require `tor` feature`
+    // Use `ConnectionMode::Tor` to use the embedded tor client (require `tor` feature)
     let (_tx, _rx) = async_wsocket::connect(&url, ConnectionMode::Direct, Duration::from_secs(120))
         .await
         .unwrap();
@@ -21,9 +21,10 @@ async fn main() {
 
 The following crate feature flags are available:
 
-| Feature    | Default | Description                        |
-|------------|:-------:|------------------------------------|
-| `tor`      |   No    | Enable embedded tor client support |
+| Feature | Default | Description                        |
+|---------|:-------:|------------------------------------|
+| `socks` |   No    | Enable `socks` proxy support       |
+| `tor`   |   No    | Enable embedded tor client support |
 
 ## Minimum Supported Rust Version (MSRV)
 

@@ -6,7 +6,7 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(feature = "default", doc = include_str!("../README.md"))]
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -29,11 +29,10 @@ pub enum ConnectionMode {
     #[default]
     Direct,
     /// Custom proxy
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
     Proxy(SocketAddr),
     /// Embedded tor client
-    #[cfg(feature = "tor")]
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
     Tor,
 }
 
