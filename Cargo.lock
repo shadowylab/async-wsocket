@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "async-wsocket"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "arti-client",
  "async-utility",
