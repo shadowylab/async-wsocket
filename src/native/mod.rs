@@ -57,10 +57,12 @@ pub async fn connect(
 }
 
 async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
-    let (stream, _) = time::timeout(
+    // NOT REMOVE `Box::pin`!
+    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
+    let (stream, _) = Box::pin(time::timeout(
         Some(timeout),
         tokio_tungstenite::connect_async(url.as_str()),
-    )
+    ))
     .await
     .ok_or(Error::Timeout)??;
     Ok(WebSocket::Std(stream))
@@ -79,10 +81,12 @@ async fn connect_proxy(
     let addr: String = format!("{host}:{port}");
 
     let conn: TcpStream = TcpSocks5Stream::connect(proxy, addr).await?;
-    let (stream, _) = time::timeout(
+    // NOT REMOVE `Box::pin`!
+    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
+    let (stream, _) = Box::pin(time::timeout(
         Some(timeout),
         tokio_tungstenite::client_async_tls(url.as_str(), conn),
-    )
+    ))
     .await
     .ok_or(Error::Timeout)??;
     Ok(WebSocket::Std(stream))
@@ -96,10 +100,12 @@ async fn connect_tor(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
         .ok_or_else(Error::invalid_port)?;
 
     let conn: DataStream = tor::connect(host, port).await?;
-    let (stream, _) = time::timeout(
+    // NOT REMOVE `Box::pin`!
+    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
+    let (stream, _) = Box::pin(time::timeout(
         Some(timeout),
         tokio_tungstenite::client_async_tls(url.as_str(), conn),
-    )
+    ))
     .await
     .ok_or(Error::Timeout)??;
     Ok(WebSocket::Tor(stream))

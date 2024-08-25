@@ -4,6 +4,7 @@
 //! Async WebSocket
 
 #![forbid(unsafe_code)]
+#![warn(clippy::large_futures)]
 #![cfg_attr(feature = "default", doc = include_str!("../README.md"))]
 
 #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
