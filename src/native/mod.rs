@@ -5,6 +5,8 @@
 
 #[cfg(feature = "socks")]
 use std::net::SocketAddr;
+#[cfg(feature = "tor")]
+use std::path::PathBuf;
 use std::time::Duration;
 
 #[cfg(feature = "tor")]
@@ -21,7 +23,7 @@ mod error;
 mod socks;
 mod stream;
 #[cfg(feature = "tor")]
-mod tor;
+pub(crate) mod tor;
 
 pub use self::error::Error;
 #[cfg(feature = "socks")]
@@ -40,7 +42,7 @@ pub async fn connect(
         #[cfg(feature = "socks")]
         ConnectionMode::Proxy(proxy) => connect_proxy(url, proxy, timeout).await?,
         #[cfg(feature = "tor")]
-        ConnectionMode::Tor => connect_tor(url, timeout).await?,
+        ConnectionMode::Tor { custom_path } => connect_tor(url, timeout, custom_path).await?,
     };
 
     match stream {
@@ -93,13 +95,17 @@ async fn connect_proxy(
 }
 
 #[cfg(feature = "tor")]
-async fn connect_tor(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
+async fn connect_tor(
+    url: &Url,
+    timeout: Duration,
+    custom_path: Option<PathBuf>,
+) -> Result<WebSocket, Error> {
     let host: &str = url.host_str().ok_or_else(Error::empty_host)?;
     let port: u16 = url
         .port_or_known_default()
         .ok_or_else(Error::invalid_port)?;
 
-    let conn: DataStream = tor::connect(host, port).await?;
+    let conn: DataStream = tor::connect(host, port, custom_path).await?;
     // NOT REMOVE `Box::pin`!
     // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
     let (stream, _) = Box::pin(time::timeout(
