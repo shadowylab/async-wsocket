@@ -4,7 +4,6 @@
 
 //! Wasm
 
-#![allow(dead_code)] // TODO: remove this
 #![allow(clippy::arc_with_non_send_sync)]
 
 use std::time::Duration;

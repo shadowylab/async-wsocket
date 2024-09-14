@@ -8,7 +8,7 @@ use std::sync::Arc;
 use futures::StreamExt;
 use url::Url;
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::JsCast;
 use web_sys::{BinaryType, CloseEvent as JsCloseEvt, DomException, WebSocket as WebSysSocket};
 
 use crate::wasm::pharos::{Filter, Observable, Observe, ObserveConfig, PharErr, SharedPharos};
@@ -154,131 +154,6 @@ impl WebSocket {
                 Arc::new(on_close),
             ),
         ))
-    }
-
-    /// Close the socket. The future will resolve once the socket's state has become `WsState::CLOSED`.
-    /// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close)
-    pub async fn close_code(&self, code: u16) -> Result<CloseEvent, WsError> {
-        match self.ready_state() {
-            WsState::Closed => return Err(WsError::ConnectionNotOpen),
-            WsState::Closing => {}
-
-            _ => {
-                match self.ws.close_with_code(code) {
-                    // Notify Observers
-                    Ok(_) => notify(self.pharos.clone(), WsEvent::Closing),
-
-                    Err(_) => {
-                        return Err(WsError::InvalidCloseCode { supplied: code });
-                    }
-                }
-            }
-        }
-
-        let mut evts = match self
-            .pharos
-            .observe_shared(Filter::Pointer(WsEvent::is_closed).into())
-            .await
-        {
-            Ok(events) => events,
-            Err(e) => unreachable!("{:?}", e), // only happens if we closed it.
-        };
-
-        let ce = evts.next().await.expect_throw("receive a close event");
-
-        if let WsEvent::Closed(e) = ce {
-            Ok(e)
-        } else {
-            unreachable!()
-        }
-    }
-
-    /// Close the socket. The future will resolve once the socket's state has become `WsState::CLOSED`.
-    /// See: [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close)
-    pub async fn close_reason(
-        &self,
-        code: u16,
-        reason: impl AsRef<str>,
-    ) -> Result<CloseEvent, WsError> {
-        match self.ready_state() {
-            WsState::Closed => return Err(WsError::ConnectionNotOpen),
-            WsState::Closing => {}
-
-            _ => {
-                if reason.as_ref().len() > 123 {
-                    return Err(WsError::ReasonStringToLong);
-                }
-
-                match self.ws.close_with_code_and_reason(code, reason.as_ref()) {
-                    // Notify Observers
-                    Ok(_) => notify(self.pharos.clone(), WsEvent::Closing),
-
-                    Err(_) => return Err(WsError::InvalidCloseCode { supplied: code }),
-                }
-            }
-        }
-
-        let mut evts = match self
-            .pharos
-            .observe_shared(Filter::Pointer(WsEvent::is_closed).into())
-            .await
-        {
-            Ok(events) => events,
-            Err(e) => unreachable!("{:?}", e), // only happens if we closed it.
-        };
-
-        let ce = evts.next().await.expect_throw("receive a close event");
-
-        if let WsEvent::Closed(e) = ce {
-            Ok(e)
-        } else {
-            unreachable!()
-        }
-    }
-
-    /// Verify the [WsState] of the connection.
-    pub fn ready_state(&self) -> WsState {
-        self.ws
-            .ready_state()
-            .try_into()
-            // This can't throw unless the browser gives us an invalid ready state.
-            .expect_throw("Convert ready state from browser API")
-    }
-
-    /// Access the wrapped [web_sys::WebSocket](https://docs.rs/web-sys/0.3.25/web_sys/struct.WebSocket.html) directly.
-    ///
-    /// _ws_stream_wasm_ tries to expose all useful functionality through an idiomatic rust API, so hopefully
-    /// you won't need this, however if I missed something, you can.
-    ///
-    /// ## Caveats
-    /// If you call `set_onopen`, `set_onerror`, `set_onmessage` or `set_onclose` on this, you will overwrite
-    /// the event listeners from `ws_stream_wasm`, and things will break.
-    pub fn wrapped(&self) -> &WebSysSocket {
-        &self.ws
-    }
-
-    /// The number of bytes of data that have been queued but not yet transmitted to the network.
-    ///
-    /// **NOTE:** that this is the number of bytes buffered by the underlying platform WebSocket
-    /// implementation. It does not reflect any buffering performed by _ws_stream_wasm_.
-    pub fn buffered_amount(&self) -> u32 {
-        self.ws.buffered_amount()
-    }
-
-    /// The extensions selected by the server as negotiated during the connection.
-    ///
-    /// **NOTE**: This is an untested feature. The back-end server we use for testing (_tungstenite_)
-    /// does not support Extensions.
-    pub fn extensions(&self) -> String {
-        self.ws.extensions()
-    }
-
-    /// The name of the sub-protocol the server selected during the connection.
-    ///
-    /// This will be one of the strings specified in the protocols parameter when
-    /// creating this WebSocket instance.
-    pub fn protocol(&self) -> String {
-        self.ws.protocol()
     }
 
     /// Retrieve the address to which this socket is connected.
