@@ -6,13 +6,14 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use arti_client::config::onion_service::OnionServiceConfigBuilder;
 use arti_client::config::{CfgPath, ConfigBuildError, TorClientConfigBuilder};
 use arti_client::{DataStream, TorClient, TorClientConfig};
 use async_utility::thread;
 use thiserror::Error;
+use tokio::sync::OnceCell;
 use tor_hsrproxy::config::{
     Encapsulation, ProxyAction, ProxyConfigBuilder, ProxyConfigError, ProxyPattern, ProxyRule,
     TargetAddr,
@@ -21,7 +22,7 @@ use tor_hsrproxy::OnionServiceReverseProxy;
 use tor_hsservice::{HsNickname, InvalidNickname, OnionServiceConfig, RunningOnionService};
 use tor_rtcompat::PreferredRuntime;
 
-static TOR_CLIENT: OnceLock<Result<TorClient<PreferredRuntime>, Error>> = OnceLock::new();
+static TOR_CLIENT: OnceCell<TorClient<PreferredRuntime>> = OnceCell::const_new();
 
 #[derive(Debug, Clone, Error)]
 pub enum Error {
@@ -39,7 +40,9 @@ pub enum Error {
     InvalidNickname(#[from] InvalidNickname),
 }
 
-fn init_tor_client(custom_path: Option<PathBuf>) -> Result<TorClient<PreferredRuntime>, Error> {
+async fn init_tor_client(
+    custom_path: Option<PathBuf>,
+) -> Result<TorClient<PreferredRuntime>, Error> {
     // Construct default Tor Client config
     let mut config = TorClientConfigBuilder::default();
 
@@ -61,19 +64,18 @@ fn init_tor_client(custom_path: Option<PathBuf>) -> Result<TorClient<PreferredRu
     let config: TorClientConfig = config.build()?;
     Ok(TorClient::builder()
         .config(config)
-        .create_unbootstrapped()?)
+        .create_bootstrapped()
+        .await?)
 }
 
 /// Get or init tor client
 #[inline]
-fn get_tor_client<'a>(
+async fn get_tor_client<'a>(
     custom_path: Option<PathBuf>,
 ) -> Result<&'a TorClient<PreferredRuntime>, Error> {
-    // TODO: replace with `get_or_try_init` when will be stable
-    match TOR_CLIENT.get_or_init(|| init_tor_client(custom_path)) {
-        Ok(client) => Ok(client),
-        Err(e) => Err(e.clone()),
-    }
+    TOR_CLIENT
+        .get_or_try_init(|| async { init_tor_client(custom_path).await })
+        .await
 }
 
 #[inline]
@@ -82,12 +84,12 @@ pub(super) async fn connect(
     port: u16,
     custom_path: Option<PathBuf>,
 ) -> Result<DataStream, Error> {
-    let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path)?;
+    let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path).await?;
     Ok(client.connect((domain, port)).await?)
 }
 
 /// Launch onion service and forward requests from `hiddenservice.onion:<port>` to [`SocketAddr`].
-pub fn launch_onion_service<S>(
+pub async fn launch_onion_service<S>(
     nickname: S,
     addr: SocketAddr,
     port: u16,
@@ -97,7 +99,7 @@ where
     S: AsRef<str>,
 {
     // Get tor client
-    let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path)?;
+    let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path).await?;
 
     // Configure proxy
     let mut config: ProxyConfigBuilder = ProxyConfigBuilder::default();
