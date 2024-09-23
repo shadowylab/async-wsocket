@@ -223,6 +223,7 @@ dependencies = [
  "tor-hsrproxy",
  "tor-hsservice",
  "tor-rtcompat",
+ "tracing-subscriber",
  "url",
  "wasm-bindgen",
  "web-sys",
