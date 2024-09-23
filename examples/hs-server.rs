@@ -3,8 +3,7 @@
 
 use std::net::SocketAddr;
 
-use async_wsocket::native::tor;
-use futures_util::StreamExt;
+use async_wsocket::prelude::*;
 use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]

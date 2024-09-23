@@ -3,8 +3,7 @@
 
 use std::time::Duration;
 
-use async_wsocket::{ConnectionMode, Url, WsMessage};
-use futures_util::{SinkExt, StreamExt};
+use async_wsocket::prelude::*;
 
 const NONCE: u64 = 123456789;
 
