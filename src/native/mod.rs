@@ -13,9 +13,11 @@ use std::time::Duration;
 use arti_client::DataStream;
 use async_utility::time;
 use futures_util::StreamExt;
+use tokio::io::{AsyncRead, AsyncWrite};
 #[cfg(feature = "socks")]
 use tokio::net::TcpStream;
 pub use tokio_tungstenite::tungstenite::Message;
+pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
 mod error;
@@ -115,4 +117,12 @@ async fn connect_tor(
     .await
     .ok_or(Error::Timeout)??;
     Ok(WebSocket::Tor(stream))
+}
+
+#[inline]
+pub async fn accept<S>(raw_stream: S) -> Result<WebSocketStream<S>, Error>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
+    Ok(tokio_tungstenite::accept_async(raw_stream).await?)
 }

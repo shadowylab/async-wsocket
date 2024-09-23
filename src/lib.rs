@@ -85,8 +85,6 @@ impl ConnectionMode {
 }
 
 /// Connect
-///
-/// **Proxy is ignored for WASM targets!**
 pub async fn connect(
     url: &Url,
     _mode: ConnectionMode,
