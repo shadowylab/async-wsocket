@@ -25,7 +25,7 @@ mod error;
 mod socks;
 mod stream;
 #[cfg(feature = "tor")]
-pub(crate) mod tor;
+pub mod tor;
 
 pub use self::error::Error;
 #[cfg(feature = "socks")]
