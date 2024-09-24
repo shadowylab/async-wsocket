@@ -5,7 +5,6 @@
 
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use arti_client::config::onion_service::OnionServiceConfigBuilder;
@@ -96,7 +95,7 @@ pub async fn launch_onion_service<S>(
     custom_path: Option<PathBuf>,
 ) -> Result<Arc<RunningOnionService>, Error>
 where
-    S: AsRef<str>,
+    S: Into<String>,
 {
     // Get tor client
     let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path).await?;
@@ -109,7 +108,7 @@ where
     config.set_proxy_ports(vec![ProxyRule::new(pattern, action)]);
     let proxy = OnionServiceReverseProxy::new(config.build()?);
 
-    let nickname: HsNickname = HsNickname::from_str(nickname.as_ref())?;
+    let nickname: HsNickname = HsNickname::new(nickname.into())?;
     let config: OnionServiceConfig = OnionServiceConfigBuilder::default()
         .nickname(nickname.clone())
         .build()?;
