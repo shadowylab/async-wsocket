@@ -30,7 +30,7 @@ tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
 
 # TOR deps
 arti-client = { version = "0.22", default-features = false, features = ["compression", "onion-service-client", "onion-service-service", "rustls", "static-sqlite", "tokio"], optional = true }
-tor-hsservice = { version = "0.22", default-features = false, optional = true }
+tor-hsservice = { version = "0.23", default-features = false, optional = true }
 tor-hsrproxy = { version = "0.22", default-features = false, optional = true }
 tor-rtcompat = { version = "0.22", default-features = false, features = ["rustls", "tokio"], optional = true }
 
