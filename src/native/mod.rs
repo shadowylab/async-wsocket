@@ -36,15 +36,17 @@ use crate::ConnectionMode;
 
 pub async fn connect(
     url: &Url,
-    mode: ConnectionMode,
+    mode: &ConnectionMode,
     timeout: Duration,
 ) -> Result<(Sink, Stream), Error> {
     let stream: WebSocket = match mode {
         ConnectionMode::Direct => connect_direct(url, timeout).await?,
         #[cfg(feature = "socks")]
-        ConnectionMode::Proxy(proxy) => connect_proxy(url, proxy, timeout).await?,
+        ConnectionMode::Proxy(proxy) => connect_proxy(url, *proxy, timeout).await?,
         #[cfg(feature = "tor")]
-        ConnectionMode::Tor { custom_path } => connect_tor(url, timeout, custom_path).await?,
+        ConnectionMode::Tor { custom_path } => {
+            connect_tor(url, timeout, custom_path.as_ref()).await?
+        }
     };
 
     match stream {
@@ -100,7 +102,7 @@ async fn connect_proxy(
 async fn connect_tor(
     url: &Url,
     timeout: Duration,
-    custom_path: Option<PathBuf>,
+    custom_path: Option<&PathBuf>,
 ) -> Result<WebSocket, Error> {
     let host: &str = url.host_str().ok_or_else(Error::empty_host)?;
     let port: u16 = url

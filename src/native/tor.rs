@@ -40,7 +40,7 @@ pub enum Error {
 }
 
 async fn init_tor_client(
-    custom_path: Option<PathBuf>,
+    custom_path: Option<&PathBuf>,
 ) -> Result<TorClient<PreferredRuntime>, Error> {
     // Construct default Tor Client config
     let mut config = TorClientConfigBuilder::default();
@@ -70,7 +70,7 @@ async fn init_tor_client(
 /// Get or init tor client
 #[inline]
 async fn get_tor_client<'a>(
-    custom_path: Option<PathBuf>,
+    custom_path: Option<&PathBuf>,
 ) -> Result<&'a TorClient<PreferredRuntime>, Error> {
     TOR_CLIENT
         .get_or_try_init(|| async { init_tor_client(custom_path).await })
@@ -81,7 +81,7 @@ async fn get_tor_client<'a>(
 pub(super) async fn connect(
     domain: &str,
     port: u16,
-    custom_path: Option<PathBuf>,
+    custom_path: Option<&PathBuf>,
 ) -> Result<DataStream, Error> {
     let client: &TorClient<PreferredRuntime> = get_tor_client(custom_path).await?;
     Ok(client.connect((domain, port)).await?)
@@ -92,7 +92,7 @@ pub async fn launch_onion_service<S>(
     nickname: S,
     addr: SocketAddr,
     port: u16,
-    custom_path: Option<PathBuf>,
+    custom_path: Option<&PathBuf>,
 ) -> Result<Arc<RunningOnionService>, Error>
 where
     S: Into<String>,

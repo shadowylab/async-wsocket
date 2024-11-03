@@ -88,7 +88,7 @@ impl ConnectionMode {
 /// Connect
 pub async fn connect(
     url: &Url,
-    _mode: ConnectionMode,
+    _mode: &ConnectionMode,
     timeout: Duration,
 ) -> Result<(Sink, Stream), Error> {
     #[cfg(not(target_arch = "wasm32"))]
