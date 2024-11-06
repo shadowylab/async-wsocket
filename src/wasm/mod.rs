@@ -11,7 +11,6 @@ use std::time::Duration;
 use async_utility::{thread, time};
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
-use thiserror::Error;
 use url::Url;
 
 mod error;
@@ -22,7 +21,7 @@ mod socket;
 mod state;
 mod stream;
 
-use self::error::WsError;
+pub use self::error::Error;
 use self::event::{CloseEvent, WsEvent};
 pub use self::message::WsMessage;
 use self::pharos::SharedPharos;
@@ -32,16 +31,6 @@ use self::stream::WsStream;
 
 pub type Sink = SplitSink<WsStream, WsMessage>;
 pub type Stream = SplitStream<WsStream>;
-
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Ws error
-    #[error(transparent)]
-    Ws(#[from] WsError),
-    /// Timeout
-    #[error("timeout")]
-    Timeout,
-}
 
 pub async fn connect(url: &Url, timeout: Duration) -> Result<(Sink, Stream), Error> {
     let (_ws, stream) = time::timeout(Some(timeout), WebSocket::connect(url))

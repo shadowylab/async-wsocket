@@ -1,38 +1,73 @@
 // Copyright (c) 2022-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use thiserror::Error;
+use std::{fmt, io};
+
 use tokio_tungstenite::tungstenite::Error as WsError;
 use url::ParseError;
 
 #[cfg(feature = "tor")]
 use super::tor;
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum Error {
     /// I/O error
-    #[error(transparent)]
-    IO(#[from] std::io::Error),
+    IO(io::Error),
     /// Ws error
-    #[error(transparent)]
-    Ws(#[from] WsError),
+    Ws(WsError),
     /// Socks error
     #[cfg(feature = "socks")]
-    #[error(transparent)]
-    Socks(#[from] tokio_socks::Error),
+    Socks(tokio_socks::Error),
     /// Tor error
     #[cfg(feature = "tor")]
-    #[error(transparent)]
-    Tor(#[from] tor::Error),
+    Tor(tor::Error),
     /// Url parse error
-    #[error(transparent)]
-    Url(#[from] ParseError),
+    Url(ParseError),
     /// Timeout
-    #[error("timeout")]
     Timeout,
-    /// Invalid DNS name
-    #[error("invalid DNS name")]
-    InvalidDNSName,
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::IO(e) => write!(f, "{e}"),
+            Self::Ws(e) => write!(f, "{e}"),
+            #[cfg(feature = "socks")]
+            Self::Socks(e) => write!(f, "{e}"),
+            #[cfg(feature = "tor")]
+            Self::Tor(e) => write!(f, "{e}"),
+            Self::Url(e) => write!(f, "{e}"),
+            Self::Timeout => write!(f, "timeout"),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Self::IO(e)
+    }
+}
+
+impl From<WsError> for Error {
+    fn from(e: WsError) -> Self {
+        Self::Ws(e)
+    }
+}
+
+#[cfg(feature = "socks")]
+impl From<tokio_socks::Error> for Error {
+    fn from(e: tokio_socks::Error) -> Self {
+        Self::Socks(e)
+    }
+}
+
+#[cfg(feature = "tor")]
+impl From<tor::Error> for Error {
+    fn from(e: tor::Error) -> Self {
+        Self::Tor(e)
+    }
 }
 
 impl Error {

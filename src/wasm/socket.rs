@@ -12,7 +12,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{BinaryType, CloseEvent as JsCloseEvt, DomException, WebSocket as WebSysSocket};
 
 use crate::wasm::pharos::{Filter, Observable, Observe, ObserveConfig, PharErr, SharedPharos};
-use crate::wasm::{notify, CloseEvent, WsError, WsEvent, WsState, WsStream};
+use crate::wasm::{notify, CloseEvent, Error, WsEvent, WsState, WsStream};
 
 /// The metadata related to a websocket. Allows access to the methods on the WebSocket API.
 /// This is split from the `Stream`/`Sink` so you can pass the latter to a combinator whilst
@@ -33,22 +33,22 @@ impl WebSocket {
 
     /// Connect to the server. The future will resolve when the connection has been established with a successful WebSocket
     /// handshake.
-    pub async fn connect(url: &Url) -> Result<(Self, WsStream), WsError> {
+    pub async fn connect(url: &Url) -> Result<(Self, WsStream), Error> {
         let ws: Arc<WebSysSocket> = match WebSysSocket::new(url.as_str()) {
             Ok(ws) => Arc::new(ws),
             Err(e) => {
                 let de: &DomException = e.unchecked_ref();
                 return match de.code() {
-                    DomException::SYNTAX_ERR => Err(WsError::InvalidUrl {
+                    DomException::SYNTAX_ERR => Err(Error::InvalidUrl {
                         supplied: url.to_string(),
                     }),
                     code => {
                         if code == 0 {
-                            Err(WsError::Other(
+                            Err(Error::Other(
                                 e.as_string().unwrap_or_else(|| String::from("None")),
                             ))
                         } else {
-                            Err(WsError::Dom(code))
+                            Err(Error::Dom(code))
                         }
                     }
                 };
@@ -131,7 +131,7 @@ impl WebSocket {
         // If the connection is closed, return error
 
         if let Some(WsEvent::Closed(evt)) = evts.next().await {
-            return Err(WsError::ConnectionFailed { event: evt });
+            return Err(Error::ConnectionFailed { event: evt });
         }
 
         // We have now passed all the `await` points in this function and so the `WsStream` construction is guaranteed

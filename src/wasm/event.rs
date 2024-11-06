@@ -4,7 +4,7 @@
 
 use web_sys::CloseEvent as JsCloseEvt;
 
-use crate::wasm::WsError;
+use crate::wasm::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WsEvent {
@@ -24,7 +24,7 @@ pub enum WsEvent {
     /// An error happened, not on the connection, but inside _ws_stream_wasm_. This currently happens
     /// when an incoming message can not be converted to Rust types, eg. a String message with invalid
     /// encoding.
-    WsErr(WsError),
+    WsErr(Error),
 }
 
 impl WsEvent {

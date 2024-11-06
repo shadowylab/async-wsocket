@@ -8,7 +8,7 @@ use std::task::{Context, Poll};
 
 use futures::{Sink, Stream};
 
-use crate::wasm::{WsError, WsStream};
+use crate::wasm::{Error, WsStream};
 
 /// A wrapper around WsStream that converts errors into io::Error so that it can be
 /// used for io (like `AsyncRead`/`AsyncWrite`).
@@ -62,13 +62,13 @@ impl Sink<Vec<u8>> for WsStreamIo {
 }
 
 #[inline]
-fn convert_res_tuple(res: Result<(), WsError>) -> Result<(), io::Error> {
+fn convert_res_tuple(res: Result<(), Error>) -> Result<(), io::Error> {
     res.map_err(convert_err)
 }
 
-fn convert_err(err: WsError) -> io::Error {
+fn convert_err(err: Error) -> io::Error {
     match err {
-        WsError::ConnectionNotOpen => io::Error::from(ErrorKind::NotConnected),
+        Error::ConnectionNotOpen => io::Error::from(ErrorKind::NotConnected),
         // This shouldn't happen, so panic for early detection.
         _ => io::Error::from(ErrorKind::Other),
     }

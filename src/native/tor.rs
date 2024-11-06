@@ -3,6 +3,7 @@
 
 //! Tor
 
+use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -11,7 +12,6 @@ use arti_client::config::onion_service::OnionServiceConfigBuilder;
 use arti_client::config::{CfgPath, ConfigBuildError, TorClientConfigBuilder};
 use arti_client::{DataStream, TorClient, TorClientConfig};
 use async_utility::thread;
-use thiserror::Error;
 use tokio::sync::OnceCell;
 use tor_hsrproxy::config::{
     Encapsulation, ProxyAction, ProxyConfigBuilder, ProxyConfigError, ProxyPattern, ProxyRule,
@@ -23,20 +23,53 @@ use tor_rtcompat::PreferredRuntime;
 
 static TOR_CLIENT: OnceCell<TorClient<PreferredRuntime>> = OnceCell::const_new();
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone)]
 pub enum Error {
     /// Arti Client error
-    #[error(transparent)]
-    ArtiClient(#[from] arti_client::Error),
+    ArtiClient(arti_client::Error),
     /// Config builder error
-    #[error(transparent)]
-    ConfigBuilder(#[from] ConfigBuildError),
+    ConfigBuilder(ConfigBuildError),
     /// Proxy config error
-    #[error(transparent)]
-    ProxyConfig(#[from] ProxyConfigError),
+    ProxyConfig(ProxyConfigError),
     /// Invalid nickname
-    #[error(transparent)]
-    InvalidNickname(#[from] InvalidNickname),
+    InvalidNickname(InvalidNickname),
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ArtiClient(e) => write!(f, "{e}"),
+            Self::ConfigBuilder(e) => write!(f, "{e}"),
+            Self::ProxyConfig(e) => write!(f, "{e}"),
+            Self::InvalidNickname(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl From<arti_client::Error> for Error {
+    fn from(e: arti_client::Error) -> Self {
+        Self::ArtiClient(e)
+    }
+}
+
+impl From<ConfigBuildError> for Error {
+    fn from(e: ConfigBuildError) -> Self {
+        Self::ConfigBuilder(e)
+    }
+}
+
+impl From<ProxyConfigError> for Error {
+    fn from(e: ProxyConfigError) -> Self {
+        Self::ProxyConfig(e)
+    }
+}
+
+impl From<InvalidNickname> for Error {
+    fn from(e: InvalidNickname) -> Self {
+        Self::InvalidNickname(e)
+    }
 }
 
 async fn init_tor_client(

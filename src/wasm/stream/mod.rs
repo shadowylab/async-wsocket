@@ -20,7 +20,7 @@ use web_sys::{CloseEvent as JsCloseEvt, WebSocket, *};
 pub mod io;
 
 use crate::wasm::pharos::{Filter, Observable, SharedPharos};
-use crate::wasm::{notify, WsError, WsEvent, WsMessage, WsState};
+use crate::wasm::{notify, Error, WsEvent, WsMessage, WsState};
 
 /// A futures 0.3 Sink/Stream of [WsMessage]. Created with [WsMeta::connect](crate::WsMeta::connect).
 ///
@@ -147,7 +147,7 @@ impl WsStream {
     }
 
     /// Verify the [WsState] of the connection.
-    pub fn ready_state(&self) -> Result<WsState, WsError> {
+    pub fn ready_state(&self) -> Result<WsState, Error> {
         self.ws.ready_state().try_into()
     }
 
@@ -198,7 +198,7 @@ impl Drop for WsStream {
 }
 
 impl Stream for WsStream {
-    type Item = Result<WsMessage, WsError>;
+    type Item = Result<WsMessage, Error>;
 
     // Using `Result<T, E>` to keep same format of `tungstenite` code
 
@@ -223,7 +223,7 @@ impl Stream for WsStream {
 }
 
 impl Sink<WsMessage> for WsStream {
-    type Error = WsError;
+    type Error = Error;
 
     // Web API does not really seem to let us check for readiness, other than the connection state.
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -234,7 +234,7 @@ impl Sink<WsMessage> for WsStream {
                 Poll::Pending
             }
             WsState::Open => Ok(()).into(),
-            _ => Err(WsError::ConnectionNotOpen).into(),
+            _ => Err(Error::ConnectionNotOpen).into(),
         }
     }
 
@@ -251,18 +251,18 @@ impl Sink<WsMessage> for WsStream {
                     WsMessage::Binary(d) => self
                         .ws
                         .send_with_u8_array(&d)
-                        .map_err(|_| WsError::ConnectionNotOpen)?,
+                        .map_err(|_| Error::ConnectionNotOpen)?,
                     WsMessage::Text(s) => self
                         .ws
                         .send_with_str(&s)
-                        .map_err(|_| WsError::ConnectionNotOpen)?,
+                        .map_err(|_| Error::ConnectionNotOpen)?,
                 }
 
                 Ok(())
             }
 
             // Connecting, Closing or Closed
-            _ => Err(WsError::ConnectionNotOpen),
+            _ => Err(Error::ConnectionNotOpen),
         }
     }
 

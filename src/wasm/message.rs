@@ -8,7 +8,7 @@ use js_sys::{ArrayBuffer, Uint8Array};
 use wasm_bindgen::JsCast;
 use web_sys::{Blob, MessageEvent};
 
-use crate::wasm::WsError;
+use crate::wasm::Error;
 
 /// Represents a WebSocket Message, after converting from JavaScript type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -46,7 +46,7 @@ impl WsMessage {
 
     /// Attempt to get a &str from the WebSocket message,
     /// this will try to convert binary data to utf8.
-    pub fn to_text(&self) -> Result<&str, WsError> {
+    pub fn to_text(&self) -> Result<&str, Error> {
         match self {
             Self::Text(string) => Ok(string),
             Self::Binary(data) => Ok(str::from_utf8(data)?),
@@ -58,7 +58,7 @@ impl WsMessage {
 /// will only work if the connection is set to use the binary type ArrayBuffer.
 /// On binary type Blob, this will panic.
 impl TryFrom<MessageEvent> for WsMessage {
-    type Error = WsError;
+    type Error = Error;
 
     fn try_from(evt: MessageEvent) -> Result<Self, Self::Error> {
         match evt.data() {
@@ -75,15 +75,15 @@ impl TryFrom<MessageEvent> for WsMessage {
             // message.
             d if d.is_string() => match d.as_string() {
                 Some(text) => Ok(WsMessage::Text(text)),
-                None => Err(WsError::InvalidEncoding),
+                None => Err(Error::InvalidEncoding),
             },
 
             // We have set the binary mode to array buffer (WsMeta::connect), so normally this shouldn't happen.
             // That is as long as this is used within the context of the WsMeta constructor.
-            d if d.is_instance_of::<Blob>() => Err(WsError::CantDecodeBlob),
+            d if d.is_instance_of::<Blob>() => Err(Error::CantDecodeBlob),
 
             // should never happen.
-            _ => Err(WsError::UnknownDataType),
+            _ => Err(Error::UnknownDataType),
         }
     }
 }

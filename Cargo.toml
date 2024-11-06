@@ -19,7 +19,6 @@ tor = ["dep:arti-client", "dep:tor-hsservice", "dep:tor-hsrproxy", "dep:tor-rtco
 [dependencies]
 async-utility = "0.2"
 futures-util = { version = "0.3", default-features = false, features = ["std", "sink"] }
-thiserror = "1.0"
 url = { version = "2.5", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
