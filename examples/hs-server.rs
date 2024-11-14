@@ -4,6 +4,7 @@
 use std::net::SocketAddr;
 
 use async_wsocket::prelude::*;
+use futures_util::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
