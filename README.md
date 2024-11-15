@@ -51,9 +51,3 @@ When using `tor` feature, MSRV is `1.70.0`. MSRV for WASM targets is `1.73.0`
 ## License
 
 This project is distributed under the MIT software license - see the [LICENSE](LICENSE) file for details
-
-## Donations
-
-⚡ Tips: <https://getalby.com/p/yuki>
-
-⚡ Lightning Address: yuki@getalby.com
