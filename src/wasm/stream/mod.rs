@@ -10,7 +10,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll, Waker};
 
-use async_utility::thread;
+use async_utility::task;
 use futures::prelude::{Sink, Stream};
 use futures::{ready, FutureExt, StreamExt};
 use wasm_bindgen::closure::Closure;
@@ -130,7 +130,7 @@ impl WsStream {
             }
         };
 
-        let _ = thread::spawn(wake_on_close);
+        task::spawn(wake_on_close);
 
         Self {
             ws,

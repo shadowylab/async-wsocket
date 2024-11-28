@@ -8,7 +8,7 @@
 
 use std::time::Duration;
 
-use async_utility::{thread, time};
+use async_utility::{task, time};
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use url::Url;
@@ -41,7 +41,7 @@ pub async fn connect(url: &Url, timeout: Duration) -> Result<(Sink, Stream), Err
 
 /// Helper function to reduce code bloat
 pub(crate) fn notify(pharos: SharedPharos<WsEvent>, evt: WsEvent) {
-    let _ = thread::spawn(async move {
+    task::spawn(async move {
         pharos
             .notify(evt)
             .await

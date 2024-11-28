@@ -11,11 +11,11 @@ use std::time::Duration;
 
 #[cfg(feature = "tor")]
 use arti_client::DataStream;
-use async_utility::time;
 use futures_util::StreamExt;
 use tokio::io::{AsyncRead, AsyncWrite};
 #[cfg(feature = "socks")]
 use tokio::net::TcpStream;
+use tokio::time;
 pub use tokio_tungstenite::tungstenite::Message;
 pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
@@ -66,11 +66,11 @@ async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error
     // NOT REMOVE `Box::pin`!
     // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
     let (stream, _) = Box::pin(time::timeout(
-        Some(timeout),
+        timeout,
         tokio_tungstenite::connect_async(url.as_str()),
     ))
     .await
-    .ok_or(Error::Timeout)??;
+    .map_err(|_| Error::Timeout)??;
     Ok(WebSocket::Std(stream))
 }
 
@@ -90,11 +90,11 @@ async fn connect_proxy(
     // NOT REMOVE `Box::pin`!
     // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
     let (stream, _) = Box::pin(time::timeout(
-        Some(timeout),
+        timeout,
         tokio_tungstenite::client_async_tls(url.as_str(), conn),
     ))
     .await
-    .ok_or(Error::Timeout)??;
+    .map_err(|_| Error::Timeout)??;
     Ok(WebSocket::Std(stream))
 }
 
@@ -113,11 +113,11 @@ async fn connect_tor(
     // NOT REMOVE `Box::pin`!
     // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
     let (stream, _) = Box::pin(time::timeout(
-        Some(timeout),
+        timeout,
         tokio_tungstenite::client_async_tls(url.as_str(), conn),
     ))
     .await
-    .ok_or(Error::Timeout)??;
+    .map_err(|_| Error::Timeout)??;
     Ok(WebSocket::Tor(stream))
 }
 

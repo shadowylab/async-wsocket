@@ -11,7 +11,7 @@ use std::sync::Arc;
 use arti_client::config::onion_service::OnionServiceConfigBuilder;
 use arti_client::config::{CfgPath, ConfigBuildError, TorClientConfigBuilder};
 use arti_client::{DataStream, TorClient, TorClientConfig};
-use async_utility::thread;
+use futures_util::task::{SpawnError, SpawnExt};
 use tokio::sync::OnceCell;
 use tor_hsrproxy::config::{
     Encapsulation, ProxyAction, ProxyConfigBuilder, ProxyConfigError, ProxyPattern, ProxyRule,
@@ -33,6 +33,8 @@ pub enum Error {
     ProxyConfig(ProxyConfigError),
     /// Invalid nickname
     InvalidNickname(InvalidNickname),
+    /// Spawn error
+    Spawn(Arc<SpawnError>),
 }
 
 impl std::error::Error for Error {}
@@ -44,6 +46,7 @@ impl fmt::Display for Error {
             Self::ConfigBuilder(e) => write!(f, "{e}"),
             Self::ProxyConfig(e) => write!(f, "{e}"),
             Self::InvalidNickname(e) => write!(f, "{e}"),
+            Self::Spawn(e) => write!(f, "{e}"),
         }
     }
 }
@@ -69,6 +72,12 @@ impl From<ProxyConfigError> for Error {
 impl From<InvalidNickname> for Error {
     fn from(e: InvalidNickname) -> Self {
         Self::InvalidNickname(e)
+    }
+}
+
+impl From<SpawnError> for Error {
+    fn from(e: SpawnError) -> Self {
+        Self::Spawn(Arc::new(e))
     }
 }
 
@@ -150,12 +159,12 @@ where
 
     // TODO: handle error?
     let runtime = client.runtime().clone();
-    let _ = thread::spawn(async move {
+    client.runtime().spawn(async move {
         proxy
             .handle_requests(runtime, nickname, stream)
             .await
             .unwrap();
-    });
+    })?;
 
     Ok(service)
 }
