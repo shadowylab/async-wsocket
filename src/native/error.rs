@@ -1,7 +1,7 @@
 // Copyright (c) 2022-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::{fmt, io};
+use core::fmt;
 
 use tokio_tungstenite::tungstenite::Error as WsError;
 use url::ParseError;
@@ -11,8 +11,6 @@ use super::tor;
 
 #[derive(Debug)]
 pub enum Error {
-    /// I/O error
-    IO(io::Error),
     /// Ws error
     Ws(WsError),
     /// Socks error
@@ -32,7 +30,6 @@ impl std::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::IO(e) => write!(f, "{e}"),
             Self::Ws(e) => write!(f, "{e}"),
             #[cfg(feature = "socks")]
             Self::Socks(e) => write!(f, "{e}"),
@@ -41,12 +38,6 @@ impl fmt::Display for Error {
             Self::Url(e) => write!(f, "{e}"),
             Self::Timeout => write!(f, "timeout"),
         }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
-        Self::IO(e)
     }
 }
 
