@@ -3,6 +3,7 @@
 
 //! Prelude
 
+#![allow(unused_imports)]
 #![allow(unknown_lints)]
 #![allow(ambiguous_glob_reexports)]
 #![doc(hidden)]

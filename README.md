@@ -38,10 +38,11 @@ async fn main() {
 
 The following crate feature flags are available:
 
-| Feature | Default | Description                        |
-|---------|:-------:|------------------------------------|
-| `socks` |   No    | Enable `socks` proxy support       |
-| `tor`   |   No    | Enable embedded tor client support |
+| Feature               | Default | Description                                                             |
+|-----------------------|:-------:|-------------------------------------------------------------------------|
+| `socks`               |   No    | Enable `socks` proxy support                                            |
+| `tor`                 |   No    | Enable embedded tor client support                                      |
+| `tor-launch-service ` |   No    | Enable embedded tor client with support to launch hidden onion services |
 
 ## Minimum Supported Rust Version (MSRV)
 
