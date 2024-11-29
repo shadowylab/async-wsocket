@@ -9,8 +9,6 @@ use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
-
     // Bind
     let listener = TcpListener::bind("127.0.0.1:55889").await.unwrap();
 

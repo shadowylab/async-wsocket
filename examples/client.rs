@@ -10,8 +10,6 @@ const NONCE: u64 = 123456789;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
-
     let url =
         Url::parse("ws://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion").unwrap();
     let (mut tx, mut rx) =
