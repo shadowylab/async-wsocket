@@ -15,7 +15,7 @@ keywords = ["async", "tokio", "wasm", "websocket"]
 default = []
 socks = ["dep:tokio-socks"]
 tor = ["tokio/sync", "dep:arti-client", "dep:tor-rtcompat"]
-tor-launch-service = ["tor", "arti-client/onion-service-service", "dep:tor-hsservice", "dep:tor-hsrproxy"]
+tor-launch-service = ["tor", "arti-client?/onion-service-service", "dep:tor-hsservice", "dep:tor-hsrproxy"]
 
 [dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std", "sink"] }
