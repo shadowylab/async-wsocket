@@ -16,6 +16,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 #[cfg(feature = "socks")]
 use tokio::net::TcpStream;
 use tokio::time;
+use tokio_tungstenite::tungstenite::protocol::Role;
 pub use tokio_tungstenite::tungstenite::Message;
 pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
@@ -127,4 +128,15 @@ where
     S: AsyncRead + AsyncWrite + Unpin,
 {
     Ok(tokio_tungstenite::accept_async(raw_stream).await?)
+}
+
+/// Take an already upgraded websocket connection
+///
+/// Useful for when using [hyper] or [warp] or any other HTTP server
+#[inline]
+pub async fn take_upgraded<S>(raw_stream: S) -> Result<WebSocketStream<S>, Error>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
+    Ok(WebSocketStream::from_raw_socket(raw_stream, Role::Server, None).await)
 }
