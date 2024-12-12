@@ -134,9 +134,9 @@ where
 ///
 /// Useful for when using [hyper] or [warp] or any other HTTP server
 #[inline]
-pub async fn take_upgraded<S>(raw_stream: S) -> Result<WebSocketStream<S>, Error>
+pub async fn take_upgraded<S>(raw_stream: S) -> WebSocketStream<S>
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
-    Ok(WebSocketStream::from_raw_socket(raw_stream, Role::Server, None).await)
+    WebSocketStream::from_raw_socket(raw_stream, Role::Server, None).await
 }
