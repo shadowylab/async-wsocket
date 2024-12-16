@@ -10,7 +10,7 @@
 #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
 use std::net::SocketAddr;
 #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 pub use futures_util;
@@ -60,27 +60,26 @@ impl ConnectionMode {
     }
 
     /// Embedded tor client
+    ///
+    /// This not work on `android` and/or `ios` targets.
+    /// Use [`Connection::tor_with_path`] instead.
     #[inline]
-    #[cfg(all(
-        feature = "tor",
-        not(target_arch = "wasm32"),
-        not(target_os = "android"),
-        not(target_os = "ios"),
-    ))]
+    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
     pub fn tor() -> Self {
         Self::Tor { custom_path: None }
     }
 
     /// Embedded tor client
+    ///
+    /// Specify a path where to store data
     #[inline]
-    #[cfg(all(
-        feature = "tor",
-        not(target_arch = "wasm32"),
-        any(target_os = "android", target_os = "ios")
-    ))]
-    pub fn tor(data_path: PathBuf) -> Self {
+    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
+    pub fn tor_with_path<P>(data_path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
         Self::Tor {
-            custom_path: Some(data_path),
+            custom_path: Some(data_path.as_ref().to_path_buf()),
         }
     }
 }
