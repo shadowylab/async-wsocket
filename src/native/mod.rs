@@ -11,29 +11,36 @@ use std::time::Duration;
 
 #[cfg(feature = "tor")]
 use arti_client::DataStream;
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt, TryStreamExt};
 use tokio::io::{AsyncRead, AsyncWrite};
-#[cfg(feature = "socks")]
 use tokio::net::TcpStream;
 use tokio::time;
 use tokio_tungstenite::tungstenite::protocol::Role;
 pub use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::MaybeTlsStream;
 pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
 mod error;
 #[cfg(feature = "socks")]
 mod socks;
-mod stream;
 #[cfg(feature = "tor")]
 pub mod tor;
 
 pub use self::error::Error;
 #[cfg(feature = "socks")]
 use self::socks::TcpSocks5Stream;
-use self::stream::WebSocket;
-pub use self::stream::{Sink, Stream};
 use crate::ConnectionMode;
+
+type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
+pub type Sink = Box<dyn futures_util::Sink<Message, Error = Error> + Send + Unpin>;
+pub type Stream = Box<dyn futures_util::Stream<Item = Result<Message, Error>> + Send + Unpin>;
+
+pub enum WebSocket {
+    Std(WsStream<TcpStream>),
+    #[cfg(feature = "tor")]
+    Tor(WsStream<DataStream>),
+}
 
 pub async fn connect(
     url: &Url,
@@ -53,12 +60,18 @@ pub async fn connect(
     match stream {
         WebSocket::Std(stream) => {
             let (tx, rx) = stream.split();
-            Ok((Sink::Std(tx), Stream::Std(rx)))
+            Ok((
+                Box::new(tx.sink_map_err(Error::from)),
+                Box::new(rx.map_err(Error::from)),
+            ))
         }
         #[cfg(feature = "tor")]
         WebSocket::Tor(stream) => {
             let (tx, rx) = stream.split();
-            Ok((Sink::Tor(tx), Stream::Tor(rx)))
+            Ok((
+                Box::new(tx.sink_map_err(Error::from)),
+                Box::new(rx.map_err(Error::from)),
+            ))
         }
     }
 }
