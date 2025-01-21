@@ -30,11 +30,9 @@ pub mod tor;
 pub use self::error::Error;
 #[cfg(feature = "socks")]
 use self::socks::TcpSocks5Stream;
-use crate::ConnectionMode;
+use crate::{ConnectionMode, Sink, Stream};
 
 type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
-pub type Sink = Box<dyn futures_util::Sink<Message, Error = Error> + Send + Unpin>;
-pub type Stream = Box<dyn futures_util::Stream<Item = Result<Message, Error>> + Send + Unpin>;
 
 pub enum WebSocket {
     Std(WsStream<TcpStream>),

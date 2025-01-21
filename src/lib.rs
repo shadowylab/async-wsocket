@@ -23,9 +23,18 @@ pub mod prelude;
 pub mod wasm;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use self::native::{Error, Message as WsMessage, Sink, Stream};
+pub use self::native::{Error, Message as WsMessage};
 #[cfg(target_arch = "wasm32")]
-pub use self::wasm::{Error, Sink, Stream, WsMessage};
+pub use self::wasm::{Error, WsMessage};
+
+#[cfg(not(target_arch = "wasm32"))]
+pub type Sink = Box<dyn futures_util::Sink<WsMessage, Error = Error> + Send + Unpin>;
+#[cfg(not(target_arch = "wasm32"))]
+pub type Stream = Box<dyn futures_util::Stream<Item = Result<WsMessage, Error>> + Send + Unpin>;
+#[cfg(target_arch = "wasm32")]
+pub type Sink = Box<dyn futures_util::Sink<WsMessage, Error = Error> + Unpin>;
+#[cfg(target_arch = "wasm32")]
+pub type Stream = Box<dyn futures_util::Stream<Item = Result<WsMessage, Error>> + Unpin>;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ConnectionMode {
