@@ -9,6 +9,7 @@
 use std::time::Duration;
 
 use async_utility::{task, time};
+use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use url::Url;
 
@@ -27,14 +28,15 @@ use self::pharos::SharedPharos;
 use self::socket::WebSocket;
 use self::state::WsState;
 use self::stream::WsStream;
-use crate::{Sink, Stream};
+
+pub type Sink = SplitSink<WsStream, WsMessage>;
+pub type Stream = SplitStream<WsStream>;
 
 pub async fn connect(url: &Url, timeout: Duration) -> Result<(Sink, Stream), Error> {
     let (_ws, stream) = time::timeout(Some(timeout), WebSocket::connect(url))
         .await
         .ok_or(Error::Timeout)??;
-    let (tx, rx) = stream.split();
-    Ok((Box::new(tx), Box::new(rx)))
+    Ok(stream.split())
 }
 
 /// Helper function to reduce code bloat
