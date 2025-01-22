@@ -12,17 +12,20 @@ const NONCE: u64 = 123456789;
 async fn main() {
     let url =
         Url::parse("ws://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion").unwrap();
-    let (mut tx, mut rx) =
+    let mut socket: WebSocket =
         async_wsocket::connect(&url, &ConnectionMode::tor(), Duration::from_secs(120))
             .await
             .unwrap();
 
+    // Split sink and stream
+    // let (mut tx, mut rx) = socket.split();
+
     // Send ping
     let nonce = NONCE.to_be_bytes().to_vec();
-    tx.send(WsMessage::Ping(nonce.clone())).await.unwrap();
+    socket.send(WsMessage::Ping(nonce.clone())).await.unwrap();
 
     // Listen for messages
-    while let Some(msg) = rx.next().await {
+    while let Some(msg) = socket.next().await {
         if let Ok(WsMessage::Pong(bytes)) = msg {
             assert_eq!(nonce, bytes);
             println!("Pong match!");

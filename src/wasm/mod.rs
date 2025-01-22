@@ -9,8 +9,6 @@
 use std::time::Duration;
 
 use async_utility::{task, time};
-use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::StreamExt;
 use url::Url;
 
 mod error;
@@ -25,18 +23,16 @@ pub use self::error::Error;
 use self::event::{CloseEvent, WsEvent};
 pub use self::message::WsMessage;
 use self::pharos::SharedPharos;
-use self::socket::WebSocket;
+use self::socket::WebSocket as WasmWebSocket;
 use self::state::WsState;
-use self::stream::WsStream;
+pub(crate) use self::stream::WsStream;
+use crate::socket::WebSocket;
 
-pub type Sink = SplitSink<WsStream, WsMessage>;
-pub type Stream = SplitStream<WsStream>;
-
-pub async fn connect(url: &Url, timeout: Duration) -> Result<(Sink, Stream), Error> {
-    let (_ws, stream) = time::timeout(Some(timeout), WebSocket::connect(url))
+pub async fn connect(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
+    let (_ws, stream) = time::timeout(Some(timeout), WasmWebSocket::connect(url))
         .await
         .ok_or(Error::Timeout)??;
-    Ok(stream.split())
+    Ok(WebSocket::Wasm(stream))
 }
 
 /// Helper function to reduce code bloat

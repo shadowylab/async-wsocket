@@ -11,7 +11,6 @@ use std::time::Duration;
 
 #[cfg(feature = "tor")]
 use arti_client::DataStream;
-use futures_util::StreamExt;
 use tokio::io::{AsyncRead, AsyncWrite};
 #[cfg(feature = "socks")]
 use tokio::net::TcpStream;
@@ -24,41 +23,27 @@ use url::Url;
 mod error;
 #[cfg(feature = "socks")]
 mod socks;
-mod stream;
 #[cfg(feature = "tor")]
 pub mod tor;
 
 pub use self::error::Error;
 #[cfg(feature = "socks")]
 use self::socks::TcpSocks5Stream;
-use self::stream::WebSocket;
-pub use self::stream::{Sink, Stream};
+use crate::socket::WebSocket;
 use crate::ConnectionMode;
 
 pub async fn connect(
     url: &Url,
     mode: &ConnectionMode,
     timeout: Duration,
-) -> Result<(Sink, Stream), Error> {
-    let stream: WebSocket = match mode {
-        ConnectionMode::Direct => connect_direct(url, timeout).await?,
+) -> Result<WebSocket, Error> {
+    match mode {
+        ConnectionMode::Direct => connect_direct(url, timeout).await,
         #[cfg(feature = "socks")]
-        ConnectionMode::Proxy(proxy) => connect_proxy(url, *proxy, timeout).await?,
+        ConnectionMode::Proxy(proxy) => connect_proxy(url, *proxy, timeout).await,
         #[cfg(feature = "tor")]
         ConnectionMode::Tor { custom_path } => {
-            connect_tor(url, timeout, custom_path.as_ref()).await?
-        }
-    };
-
-    match stream {
-        WebSocket::Std(stream) => {
-            let (tx, rx) = stream.split();
-            Ok((Sink::Std(tx), Stream::Std(rx)))
-        }
-        #[cfg(feature = "tor")]
-        WebSocket::Tor(stream) => {
-            let (tx, rx) = stream.split();
-            Ok((Sink::Tor(tx), Stream::Tor(rx)))
+            connect_tor(url, timeout, custom_path.as_ref()).await
         }
     }
 }
@@ -72,7 +57,7 @@ async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error
     ))
     .await
     .map_err(|_| Error::Timeout)??;
-    Ok(WebSocket::Std(stream))
+    Ok(WebSocket::Tokio(stream))
 }
 
 #[cfg(feature = "socks")]
@@ -96,7 +81,7 @@ async fn connect_proxy(
     ))
     .await
     .map_err(|_| Error::Timeout)??;
-    Ok(WebSocket::Std(stream))
+    Ok(WebSocket::Tokio(stream))
 }
 
 #[cfg(feature = "tor")]

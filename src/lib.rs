@@ -19,13 +19,15 @@ pub use url::{self, Url};
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;
 pub mod prelude;
+mod socket;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use self::native::{Error, Message as WsMessage, Sink, Stream};
+pub use self::native::{Error, Message as WsMessage};
+pub use self::socket::WebSocket;
 #[cfg(target_arch = "wasm32")]
-pub use self::wasm::{Error, Sink, Stream, WsMessage};
+pub use self::wasm::{Error, WsMessage};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ConnectionMode {
@@ -89,12 +91,12 @@ pub async fn connect(
     url: &Url,
     _mode: &ConnectionMode,
     timeout: Duration,
-) -> Result<(Sink, Stream), Error> {
+) -> Result<WebSocket, Error> {
     #[cfg(not(target_arch = "wasm32"))]
-    let (tx, rx) = self::native::connect(url, _mode, timeout).await?;
+    let socket: WebSocket = self::native::connect(url, _mode, timeout).await?;
 
     #[cfg(target_arch = "wasm32")]
-    let (tx, rx) = self::wasm::connect(url, timeout).await?;
+    let socket: WebSocket = self::wasm::connect(url, timeout).await?;
 
-    Ok((tx, rx))
+    Ok(socket)
 }
