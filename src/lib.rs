@@ -16,6 +16,7 @@ use std::time::Duration;
 pub use futures_util;
 pub use url::{self, Url};
 
+pub mod message;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;
 pub mod prelude;
@@ -23,11 +24,12 @@ mod socket;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
+pub use self::message::Message;
 #[cfg(not(target_arch = "wasm32"))]
-pub use self::native::{Error, Message as WsMessage};
+pub use self::native::Error;
 pub use self::socket::WebSocket;
 #[cfg(target_arch = "wasm32")]
-pub use self::wasm::{Error, WsMessage};
+pub use self::wasm::Error;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ConnectionMode {

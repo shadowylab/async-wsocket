@@ -21,7 +21,6 @@ mod stream;
 
 pub use self::error::Error;
 use self::event::{CloseEvent, WsEvent};
-pub use self::message::WsMessage;
 use self::pharos::SharedPharos;
 use self::socket::WebSocket as WasmWebSocket;
 use self::state::WsState;

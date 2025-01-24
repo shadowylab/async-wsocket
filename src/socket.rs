@@ -15,7 +15,7 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 #[cfg(target_arch = "wasm32")]
 use crate::wasm::WsStream;
-use crate::{Error, WsMessage};
+use crate::{Error, Message};
 
 #[cfg(not(target_arch = "wasm32"))]
 type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
@@ -29,7 +29,7 @@ pub enum WebSocket {
     Wasm(WsStream),
 }
 
-impl Sink<WsMessage> for WebSocket {
+impl Sink<Message> for WebSocket {
     type Error = Error;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -43,12 +43,12 @@ impl Sink<WsMessage> for WebSocket {
         }
     }
 
-    fn start_send(mut self: Pin<&mut Self>, item: WsMessage) -> Result<(), Self::Error> {
+    fn start_send(mut self: Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).start_send(item).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s).start_send(item.into()).map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).start_send(item).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s).start_send(item.into()).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).start_send(item).map_err(Into::into),
         }
@@ -78,14 +78,20 @@ impl Sink<WsMessage> for WebSocket {
 }
 
 impl Stream for WebSocket {
-    type Item = Result<WsMessage, Error>;
+    type Item = Result<Message, Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s)
+                .poll_next(cx)
+                .map(|i| i.map(|res| res.map(|msg| msg.into())))
+                .map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s)
+                .poll_next(cx)
+                .map(|i| i.map(|res| res.map(|msg| msg.into())))
+                .map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
         }

@@ -17,12 +17,11 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent as JsCloseEvt, WebSocket, *};
 
-pub mod io;
-
+use crate::message::Message;
 use crate::wasm::pharos::{Filter, Observable, SharedPharos};
-use crate::wasm::{notify, Error, WsEvent, WsMessage, WsState};
+use crate::wasm::{notify, Error, WsEvent, WsState};
 
-/// A futures 0.3 Sink/Stream of [WsMessage]. Created with [WsMeta::connect](crate::WsMeta::connect).
+/// A futures 0.3 Sink/Stream of [Message]. Created with [WsMeta::connect](crate::WsMeta::connect).
 ///
 /// ## Closing the connection
 ///
@@ -45,7 +44,7 @@ pub struct WsStream {
     ws: Arc<WebSocket>,
 
     // The queue of received messages
-    queue: Arc<RefCell<VecDeque<WsMessage>>>,
+    queue: Arc<RefCell<VecDeque<Message>>>,
 
     // Last waker of task that wants to read incoming messages to be woken up on a new message
     waker: Arc<RefCell<Option<Waker>>>,
@@ -86,7 +85,7 @@ impl WsStream {
         // Send the incoming ws messages to the WsMeta object
         #[allow(trivial_casts)]
         let on_msg = Closure::wrap(Box::new(move |msg_evt: MessageEvent| {
-            match WsMessage::try_from(msg_evt) {
+            match Message::try_from(msg_evt) {
                 Ok(msg) => q2.borrow_mut().push_back(msg),
                 Err(err) => notify(ph2.clone(), WsEvent::WsErr(err)),
             }
@@ -198,7 +197,7 @@ impl Drop for WsStream {
 }
 
 impl Stream for WsStream {
-    type Item = Result<WsMessage, Error>;
+    type Item = Result<Message, Error>;
 
     // Using `Result<T, E>` to keep same format of `tungstenite` code
 
@@ -222,7 +221,7 @@ impl Stream for WsStream {
     }
 }
 
-impl Sink<WsMessage> for WsStream {
+impl Sink<Message> for WsStream {
     type Error = Error;
 
     // Web API does not really seem to let us check for readiness, other than the connection state.
@@ -238,7 +237,7 @@ impl Sink<WsMessage> for WsStream {
         }
     }
 
-    fn start_send(self: Pin<&mut Self>, item: WsMessage) -> Result<(), Self::Error> {
+    fn start_send(self: Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
         match self.ready_state()? {
             WsState::Open => {
                 // The send method can return 2 errors:
@@ -248,11 +247,11 @@ impl Sink<WsMessage> for WsStream {
                 // So if this returns an error, we will return ConnectionNotOpen. In principle,
                 // we just checked that it's open, but this guarantees correctness.
                 match item {
-                    WsMessage::Binary(d) => self
+                    Message::Binary(d) => self
                         .ws
                         .send_with_u8_array(&d)
                         .map_err(|_| Error::ConnectionNotOpen)?,
-                    WsMessage::Text(s) => self
+                    Message::Text(s) => self
                         .ws
                         .send_with_str(&s)
                         .map_err(|_| Error::ConnectionNotOpen)?,
