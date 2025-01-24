@@ -39,34 +39,27 @@ pub enum Message {
     Close(Option<CloseFrame>),
 }
 
-// impl Message {
-//     /// Get the length of the WebSocket message.
-//     #[inline]
-//     pub fn len(&self) -> usize {
-//         match self {
-//             Self::Text(string) => string.len(),
-//             Self::Binary(data) => data.len(),
-//             Self::Ping(data) => data.len(),
-//             Self::Pong(data) => data.len(),
-//             Self::Close(frame) => frame.map(|f| f.reason.len()).unwrap_or(0),
-//         }
-//     }
-//
-//     /// Returns true if the WebSocket message has no content.
-//     /// For example, if the other side of the connection sent an empty string.
-//     #[inline]
-//     pub fn is_empty(&self) -> bool {
-//         self.len() == 0
-//     }
-//
-//     /// Consume the message and return it as binary data.
-//     pub fn into_data(self) -> Vec<u8> {
-//         match self {
-//             Self::Text(string) => string.into_bytes(),
-//             Self::Binary(data) => data,
-//         }
-//     }
-// }
+impl Message {
+    /// Get the length of the WebSocket message.
+    #[inline]
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Text(string) => string.len(),
+            Self::Binary(data) => data.len(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Ping(data) => data.len(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Pong(data) => data.len(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Close(data) => data.as_ref().map(|d| d.reason.len()).unwrap_or(0),
+        }
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 impl From<CloseFrame> for TungsteniteCloseFrame {
