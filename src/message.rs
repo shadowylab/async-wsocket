@@ -2,9 +2,6 @@
 // Distributed under the MIT software license
 
 #[cfg(not(target_arch = "wasm32"))]
-use std::borrow::Cow;
-
-#[cfg(not(target_arch = "wasm32"))]
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio_tungstenite::tungstenite::protocol::CloseFrame as TungsteniteCloseFrame;
@@ -72,11 +69,11 @@ pub enum Message {
 // }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl From<CloseFrame> for TungsteniteCloseFrame<'_> {
+impl From<CloseFrame> for TungsteniteCloseFrame {
     fn from(frame: CloseFrame) -> Self {
         Self {
             code: CloseCode::from(frame.code),
-            reason: Cow::Owned(frame.reason),
+            reason: frame.reason.into(),
         }
     }
 }
@@ -85,21 +82,21 @@ impl From<CloseFrame> for TungsteniteCloseFrame<'_> {
 impl From<Message> for TungsteniteMessage {
     fn from(msg: Message) -> Self {
         match msg {
-            Message::Text(text) => Self::Text(text),
-            Message::Binary(data) => Self::Binary(data),
-            Message::Ping(data) => Self::Ping(data),
-            Message::Pong(data) => Self::Pong(data),
+            Message::Text(text) => Self::Text(text.into()),
+            Message::Binary(data) => Self::Binary(data.into()),
+            Message::Ping(data) => Self::Ping(data.into()),
+            Message::Pong(data) => Self::Pong(data.into()),
             Message::Close(frame) => Self::Close(frame.map(|f| f.into())),
         }
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl From<TungsteniteCloseFrame<'_>> for CloseFrame {
-    fn from(frame: TungsteniteCloseFrame<'_>) -> Self {
+impl From<TungsteniteCloseFrame> for CloseFrame {
+    fn from(frame: TungsteniteCloseFrame) -> Self {
         Self {
             code: frame.code.into(),
-            reason: frame.reason.into_owned(),
+            reason: frame.reason.to_string(),
         }
     }
 }
@@ -108,10 +105,10 @@ impl From<TungsteniteCloseFrame<'_>> for CloseFrame {
 impl From<TungsteniteMessage> for Message {
     fn from(msg: TungsteniteMessage) -> Self {
         match msg {
-            TungsteniteMessage::Text(text) => Self::Text(text),
-            TungsteniteMessage::Binary(data) => Self::Binary(data),
-            TungsteniteMessage::Ping(data) => Self::Ping(data),
-            TungsteniteMessage::Pong(data) => Self::Pong(data),
+            TungsteniteMessage::Text(text) => Self::Text(text.to_string()),
+            TungsteniteMessage::Binary(data) => Self::Binary(data.to_vec()),
+            TungsteniteMessage::Ping(data) => Self::Ping(data.to_vec()),
+            TungsteniteMessage::Pong(data) => Self::Pong(data.to_vec()),
             TungsteniteMessage::Close(frame) => Self::Close(frame.map(|f| f.into())),
             // SAFETY: from tungstenite docs: "you're not going to get this value while reading the message".
             // SAFETY: this conversion is used only in Stream trait, so when reading the messages.
