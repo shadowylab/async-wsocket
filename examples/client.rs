@@ -22,11 +22,11 @@ async fn main() {
 
     // Send ping
     let nonce = NONCE.to_be_bytes().to_vec();
-    socket.send(WsMessage::Ping(nonce.clone())).await.unwrap();
+    socket.send(Message::Ping(nonce.clone())).await.unwrap();
 
     // Listen for messages
     while let Some(msg) = socket.next().await {
-        if let Ok(WsMessage::Pong(bytes)) = msg {
+        if let Ok(Message::Pong(bytes)) = msg {
             assert_eq!(nonce, bytes);
             println!("Pong match!");
             break;
