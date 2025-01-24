@@ -42,6 +42,20 @@ pub enum Message {
 }
 
 impl Message {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn from_native(msg: TungsteniteMessage) -> Self {
+        match msg {
+            TungsteniteMessage::Text(text) => Self::Text(text.to_string()),
+            TungsteniteMessage::Binary(data) => Self::Binary(data.to_vec()),
+            TungsteniteMessage::Ping(data) => Self::Ping(data.to_vec()),
+            TungsteniteMessage::Pong(data) => Self::Pong(data.to_vec()),
+            TungsteniteMessage::Close(frame) => Self::Close(frame.map(|f| f.into())),
+            // SAFETY: from tungstenite docs: "you're not going to get this value while reading the message".
+            // SAFETY: this conversion is used only in Stream trait, so when reading the messages.
+            TungsteniteMessage::Frame(..) => unreachable!(),
+        }
+    }
+
     /// Get the length of the WebSocket message.
     #[inline]
     pub fn len(&self) -> usize {
@@ -117,22 +131,6 @@ impl From<TungsteniteCloseFrame> for CloseFrame {
         Self {
             code: frame.code.into(),
             reason: frame.reason.to_string(),
-        }
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl From<TungsteniteMessage> for Message {
-    fn from(msg: TungsteniteMessage) -> Self {
-        match msg {
-            TungsteniteMessage::Text(text) => Self::Text(text.to_string()),
-            TungsteniteMessage::Binary(data) => Self::Binary(data.to_vec()),
-            TungsteniteMessage::Ping(data) => Self::Ping(data.to_vec()),
-            TungsteniteMessage::Pong(data) => Self::Pong(data.to_vec()),
-            TungsteniteMessage::Close(frame) => Self::Close(frame.map(|f| f.into())),
-            // SAFETY: from tungstenite docs: "you're not going to get this value while reading the message".
-            // SAFETY: this conversion is used only in Stream trait, so when reading the messages.
-            TungsteniteMessage::Frame(..) => unreachable!(),
         }
     }
 }

@@ -85,12 +85,12 @@ impl Stream for WebSocket {
             #[cfg(not(target_arch = "wasm32"))]
             Self::Tokio(s) => Pin::new(s)
                 .poll_next(cx)
-                .map(|i| i.map(|res| res.map(|msg| msg.into())))
+                .map(|i| i.map(|res| res.map(Message::from_native)))
                 .map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
             Self::Tor(s) => Pin::new(s)
                 .poll_next(cx)
-                .map(|i| i.map(|res| res.map(|msg| msg.into())))
+                .map(|i| i.map(|res| res.map(Message::from_native)))
                 .map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
