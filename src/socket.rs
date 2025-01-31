@@ -4,6 +4,7 @@
 use std::ops::DerefMut;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
 use arti_client::DataStream;
@@ -12,10 +13,11 @@ use futures_util::{Sink, Stream};
 use tokio::net::TcpStream;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use url::Url;
 
 #[cfg(target_arch = "wasm32")]
 use crate::wasm::WsStream;
-use crate::{Error, Message};
+use crate::{ConnectionMode, Error, Message};
 
 #[cfg(not(target_arch = "wasm32"))]
 type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
@@ -27,6 +29,22 @@ pub enum WebSocket {
     Tor(WsStream<DataStream>),
     #[cfg(target_arch = "wasm32")]
     Wasm(WsStream),
+}
+
+impl WebSocket {
+    pub async fn connect(
+        url: &Url,
+        _mode: &ConnectionMode,
+        timeout: Duration,
+    ) -> Result<Self, Error> {
+        #[cfg(not(target_arch = "wasm32"))]
+        let socket: WebSocket = crate::native::connect(url, _mode, timeout).await?;
+
+        #[cfg(target_arch = "wasm32")]
+        let socket: WebSocket = crate::wasm::connect(url, timeout).await?;
+
+        Ok(socket)
+    }
 }
 
 impl Sink<Message> for WebSocket {

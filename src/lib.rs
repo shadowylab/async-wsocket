@@ -89,16 +89,11 @@ impl ConnectionMode {
 }
 
 /// Connect
+#[inline]
 pub async fn connect(
     url: &Url,
-    _mode: &ConnectionMode,
+    mode: &ConnectionMode,
     timeout: Duration,
 ) -> Result<WebSocket, Error> {
-    #[cfg(not(target_arch = "wasm32"))]
-    let socket: WebSocket = self::native::connect(url, _mode, timeout).await?;
-
-    #[cfg(target_arch = "wasm32")]
-    let socket: WebSocket = self::wasm::connect(url, timeout).await?;
-
-    Ok(socket)
+    WebSocket::connect(url, mode, timeout).await
 }

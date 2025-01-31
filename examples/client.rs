@@ -13,7 +13,7 @@ async fn main() {
     let url =
         Url::parse("ws://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion").unwrap();
     let mut socket: WebSocket =
-        async_wsocket::connect(&url, &ConnectionMode::tor(), Duration::from_secs(120))
+        WebSocket::connect(&url, &ConnectionMode::tor(), Duration::from_secs(120))
             .await
             .unwrap();
 
