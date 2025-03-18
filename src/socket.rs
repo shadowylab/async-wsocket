@@ -57,7 +57,7 @@ impl Sink<Message> for WebSocket {
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
             Self::Tor(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
-            Self::Wasm(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
+            Self::Wasm(s) => Pin::new(s).poll_ready(cx),
         }
     }
 
@@ -68,7 +68,7 @@ impl Sink<Message> for WebSocket {
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
             Self::Tor(s) => Pin::new(s).start_send(item.into()).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
-            Self::Wasm(s) => Pin::new(s).start_send(item).map_err(Into::into),
+            Self::Wasm(s) => Pin::new(s).start_send(item),
         }
     }
 
@@ -79,7 +79,7 @@ impl Sink<Message> for WebSocket {
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
             Self::Tor(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
-            Self::Wasm(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
+            Self::Wasm(s) => Pin::new(s).poll_flush(cx),
         }
     }
 
