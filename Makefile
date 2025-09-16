@@ -5,7 +5,7 @@ fmt:
 	cargo fmt --all -- --config format_code_in_doc_comments=true
 
 deny:
-	cargo deny --version || cargo install cargo-deny
+	cargo deny --version || cargo install cargo-deny --version 0.18.3
 	cargo deny check bans
 	cargo deny check advisories
 	cargo deny check sources
