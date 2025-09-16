@@ -7,12 +7,12 @@ use std::sync::Arc;
 
 use futures::StreamExt;
 use url::Url;
-use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::closure::Closure;
 use web_sys::{BinaryType, CloseEvent as JsCloseEvt, DomException, WebSocket as WebSysSocket};
 
 use crate::wasm::pharos::{Filter, Observable, Observe, ObserveConfig, PharErr, SharedPharos};
-use crate::wasm::{notify, CloseEvent, Error, WsEvent, WsState, WsStream};
+use crate::wasm::{CloseEvent, Error, WsEvent, WsState, WsStream, notify};
 
 /// The metadata related to a websocket. Allows access to the methods on the WebSocket API.
 /// This is split from the `Stream`/`Sink` so you can pass the latter to a combinator whilst

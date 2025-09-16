@@ -46,8 +46,7 @@ The following crate feature flags are available:
 
 ## Minimum Supported Rust Version (MSRV)
 
-The MSRV for this project when compiled with `default` features and on `native` targets is `1.63.0`. 
-When using `tor` feature, MSRV is `1.70.0`. MSRV for WASM targets is `1.73.0`
+This project is built with the Rust language version `2024` and requires a minimum compiler version of `1.85.0`.
 
 ## License
 
