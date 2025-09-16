@@ -24,9 +24,9 @@ type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
 
 pub enum WebSocket {
     #[cfg(not(target_arch = "wasm32"))]
-    Tokio(WsStream<TcpStream>),
+    Tokio(Box<WsStream<TcpStream>>),
     #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    Tor(WsStream<DataStream>),
+    Tor(Box<WsStream<DataStream>>),
     #[cfg(target_arch = "wasm32")]
     Wasm(WsStream),
 }
@@ -53,9 +53,9 @@ impl Sink<Message> for WebSocket {
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s.as_mut()).poll_ready(cx).map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).poll_ready(cx).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s.as_mut()).poll_ready(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).poll_ready(cx),
         }
@@ -64,9 +64,13 @@ impl Sink<Message> for WebSocket {
     fn start_send(mut self: Pin<&mut Self>, item: Message) -> Result<(), Self::Error> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).start_send(item.into()).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s.as_mut())
+                .start_send(item.into())
+                .map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).start_send(item.into()).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s.as_mut())
+                .start_send(item.into())
+                .map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).start_send(item),
         }
@@ -75,9 +79,9 @@ impl Sink<Message> for WebSocket {
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s.as_mut()).poll_flush(cx).map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).poll_flush(cx).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s.as_mut()).poll_flush(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).poll_flush(cx),
         }
@@ -86,9 +90,9 @@ impl Sink<Message> for WebSocket {
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         match self.deref_mut() {
             #[cfg(not(target_arch = "wasm32"))]
-            Self::Tokio(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
+            Self::Tokio(s) => Pin::new(s.as_mut()).poll_close(cx).map_err(Into::into),
             #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            Self::Tor(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
+            Self::Tor(s) => Pin::new(s.as_mut()).poll_close(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             Self::Wasm(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
         }
