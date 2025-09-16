@@ -6,8 +6,8 @@
 use std::net::SocketAddr;
 
 use tokio::net::TcpStream;
-use tokio_socks::IntoTargetAddr;
 use tokio_socks::tcp::Socks5Stream;
+use tokio_socks::IntoTargetAddr;
 
 pub(crate) struct TcpSocks5Stream;
 

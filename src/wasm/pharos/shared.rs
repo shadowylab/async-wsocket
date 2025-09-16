@@ -4,9 +4,9 @@
 
 use std::sync::Arc;
 
-use futures::SinkExt;
 use futures::future::FutureExt;
 use futures::lock::Mutex;
+use futures::SinkExt;
 
 use super::{Events, Observable, Observe, ObserveConfig, PharErr, Pharos};
 

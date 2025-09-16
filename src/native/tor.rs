@@ -18,12 +18,12 @@ use arti_client::{DataStream, TorClient, TorClientConfig};
 use futures_util::task::{SpawnError, SpawnExt};
 use tokio::sync::OnceCell;
 #[cfg(feature = "tor-launch-service")]
-use tor_hsrproxy::OnionServiceReverseProxy;
-#[cfg(feature = "tor-launch-service")]
 use tor_hsrproxy::config::{
     Encapsulation, ProxyAction, ProxyConfigBuilder, ProxyConfigError, ProxyPattern, ProxyRule,
     TargetAddr,
 };
+#[cfg(feature = "tor-launch-service")]
+use tor_hsrproxy::OnionServiceReverseProxy;
 #[cfg(feature = "tor-launch-service")]
 use tor_hsservice::{HsNickname, InvalidNickname, OnionServiceConfig, RunningOnionService};
 use tor_rtcompat::PreferredRuntime;

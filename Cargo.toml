@@ -1,14 +1,13 @@
 [package]
 name = "async-wsocket"
 version = "0.13.1"
-edition = "2024"
+edition = "2021"
 description = "A convenience library for using websockets both in native and WASM environments! Include embedded tor client support."
 authors = ["Yuki Kishimoto <yukikishimoto@protonmail.com>"]
 homepage = "https://github.com/yukibtc/async-wsocket"
 repository = "https://github.com/yukibtc/async-wsocket.git"
 license = "MIT"
 readme = "README.md"
-rust-version = "1.85.0"
 categories = ["asynchronous", "network-programming", "api-bindings", "wasm", "web-programming::websocket"]
 keywords = ["async", "tokio", "wasm", "websocket"]
 

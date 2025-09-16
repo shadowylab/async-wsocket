@@ -12,14 +12,14 @@ use std::task::{Context, Poll, Waker};
 
 use async_utility::task;
 use futures::prelude::{Sink, Stream};
-use futures::{FutureExt, StreamExt, ready};
-use wasm_bindgen::JsCast;
+use futures::{ready, FutureExt, StreamExt};
 use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent as JsCloseEvt, WebSocket, *};
 
 use crate::message::Message;
 use crate::wasm::pharos::{Filter, Observable, SharedPharos};
-use crate::wasm::{Error, WsEvent, WsState, notify};
+use crate::wasm::{notify, Error, WsEvent, WsState};
 
 /// A futures 0.3 Sink/Stream of [Message]. Created with [WsMeta::connect](crate::WsMeta::connect).
 ///

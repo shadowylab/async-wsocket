@@ -9,7 +9,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use futures::future::FutureExt;
-use futures::{Sink, ready};
+use futures::{ready, Sink};
 
 mod error;
 mod events;

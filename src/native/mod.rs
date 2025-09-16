@@ -15,9 +15,9 @@ use tokio::io::{AsyncRead, AsyncWrite};
 #[cfg(feature = "socks")]
 use tokio::net::TcpStream;
 use tokio::time;
-pub use tokio_tungstenite::WebSocketStream;
-pub use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::protocol::Role;
+pub use tokio_tungstenite::tungstenite::Message;
+pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
 mod error;
@@ -29,8 +29,8 @@ pub mod tor;
 pub use self::error::Error;
 #[cfg(feature = "socks")]
 use self::socks::TcpSocks5Stream;
-use crate::ConnectionMode;
 use crate::socket::WebSocket;
+use crate::ConnectionMode;
 
 pub async fn connect(
     url: &Url,
