@@ -151,7 +151,7 @@ where
         // to None at the end, which is not possible if we have flattened the iterator.
         #[allow(clippy::manual_flatten)]
         for obs in self.get_mut().observers.iter_mut() {
-            if let Some(ref mut o) = obs {
+            if let Some(o) = obs {
                 let res = ready!(Pin::new(o).poll_ready(cx));
 
                 // Errors mean disconnected, so drop.
@@ -205,7 +205,7 @@ where
         let this = self.get_mut();
 
         for (i, opt) in this.observers.iter_mut().enumerate() {
-            if let Some(ref mut obs) = opt {
+            if let Some(obs) = opt {
                 match Pin::new(obs).poll_flush(cx) {
                     Poll::Pending => pending = true,
                     Poll::Ready(Ok(_)) => continue,
@@ -238,7 +238,7 @@ where
         let this = self.get_mut();
 
         for (i, opt) in this.observers.iter_mut().enumerate() {
-            if let Some(ref mut obs) = opt {
+            if let Some(obs) = opt {
                 let res = ready!(Pin::new(obs).poll_close(cx));
 
                 if res.is_err() {
