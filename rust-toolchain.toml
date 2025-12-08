@@ -1,5 +1,8 @@
 [toolchain]
 channel = "stable"
 profile = "minimal"
-components = ["clippy", "rust-docs", "rust-src", "rustc", "rustfmt"]
-targets = ["wasm32-unknown-unknown"]
+components = ["clippy", "rust-docs", "rustfmt"]
+targets = [
+    "wasm32-wasip2",                # WASI
+    "wasm32-unknown-unknown",       # Browser and JS environments
+]

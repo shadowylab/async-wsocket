@@ -22,8 +22,44 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crate:
+          - --features tor
+          - --features socks
+          - --target wasm32-wasip2
+          - --target wasm32-unknown-unknown
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Check
-      run: make check
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: sudo apt update && sudo apt install -y libdbus-1-dev pkg-config
+
+      - name: Install WASI SDK
+        if: "contains(matrix.crate, 'wasm32-wasip2')"
+        run: |
+          wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz
+          tar xvf wasi-sdk-29.0-x86_64-linux.tar.gz
+          
+          WASI_SDK="$(pwd)/wasi-sdk-29.0-x86_64-linux"
+          
+          echo "WASI_SDK=$WASI_SDK" >> $GITHUB_ENV
+          echo "CC_wasm32_wasip2=$WASI_SDK/bin/clang" >> $GITHUB_ENV
+          echo "AR_wasm32_wasip2=$WASI_SDK/bin/llvm-ar" >> $GITHUB_ENV
+          echo "CFLAGS_wasm32_wasip2=--sysroot=$WASI_SDK/share/wasi-sysroot" >> $GITHUB_ENV
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          key: ${{ matrix.crate }}
+
+      - name: Check
+        run: cargo check ${{ matrix.crate }}
+
+      - name: Clippy
+        run: cargo clippy ${{ matrix.crate }} -- -D warnings
+
+      - name: Test
+        if: "!contains(matrix.crate, 'wasm32-unknown-unknown')"
+        run: cargo test ${{ matrix.crate }}

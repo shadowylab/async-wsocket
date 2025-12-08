@@ -7,9 +7,15 @@
 #![warn(clippy::large_futures)]
 #![cfg_attr(feature = "default", doc = include_str!("../README.md"))]
 
-#[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
+#[cfg(all(
+    feature = "socks",
+    not(all(target_arch = "wasm32", target_os = "unknown"))
+))]
 use std::net::SocketAddr;
-#[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
+#[cfg(all(
+    feature = "tor",
+    not(all(target_arch = "wasm32", target_os = "unknown"))
+))]
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -17,18 +23,18 @@ pub use futures_util;
 pub use url::{self, Url};
 
 pub mod message;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 pub mod native;
 pub mod prelude;
 mod socket;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub mod wasm;
 
 pub use self::message::Message;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 pub use self::native::Error;
 pub use self::socket::WebSocket;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub use self::wasm::Error;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -37,10 +43,16 @@ pub enum ConnectionMode {
     #[default]
     Direct,
     /// Custom proxy
-    #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "socks",
+        not(all(target_arch = "wasm32", target_os = "unknown"))
+    ))]
     Proxy(SocketAddr),
     /// Embedded tor client
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "tor",
+        not(all(target_arch = "wasm32", target_os = "unknown"))
+    ))]
     Tor {
         /// Path for cache and state data
         ///
@@ -58,7 +70,10 @@ impl ConnectionMode {
 
     /// Proxy
     #[inline]
-    #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "socks",
+        not(all(target_arch = "wasm32", target_os = "unknown"))
+    ))]
     pub fn proxy(addr: SocketAddr) -> Self {
         Self::Proxy(addr)
     }
@@ -68,7 +83,10 @@ impl ConnectionMode {
     /// This not work on `android` and/or `ios` targets.
     /// Use [`Connection::tor_with_path`] instead.
     #[inline]
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "tor",
+        not(all(target_arch = "wasm32", target_os = "unknown"))
+    ))]
     pub fn tor() -> Self {
         Self::Tor { custom_path: None }
     }
@@ -77,7 +95,10 @@ impl ConnectionMode {
     ///
     /// Specify a path where to store data
     #[inline]
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "tor",
+        not(all(target_arch = "wasm32", target_os = "unknown"))
+    ))]
     pub fn tor_with_path<P>(data_path: P) -> Self
     where
         P: AsRef<Path>,

@@ -3,14 +3,14 @@
 
 use std::{fmt, str};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use tokio_tungstenite::tungstenite::protocol::CloseFrame as TungsteniteCloseFrame;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use tokio_tungstenite::tungstenite::protocol::Message as TungsteniteMessage;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CloseFrame {
     /// The reason as a code.
@@ -29,20 +29,20 @@ pub enum Message {
     /// A ping message with the specified payload
     ///
     /// The payload here must have a length less than 125 bytes
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     Ping(Vec<u8>),
     /// A pong message with the specified payload
     ///
     /// The payload here must have a length less than 125 bytes
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     Pong(Vec<u8>),
     /// A close message with the optional close frame.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     Close(Option<CloseFrame>),
 }
 
 impl Message {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     pub(crate) fn from_native(msg: TungsteniteMessage) -> Self {
         match msg {
             TungsteniteMessage::Text(text) => Self::Text(text.to_string()),
@@ -62,11 +62,11 @@ impl Message {
         match self {
             Self::Text(string) => string.len(),
             Self::Binary(data) => data.len(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Ping(data) => data.len(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Pong(data) => data.len(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Close(data) => data.as_ref().map(|d| d.reason.len()).unwrap_or(0),
         }
     }
@@ -82,11 +82,11 @@ impl Message {
         match self {
             Self::Text(string) => Some(string.as_str()),
             Self::Binary(data) => str::from_utf8(data).ok(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Ping(data) | Self::Pong(data) => str::from_utf8(data).ok(),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Close(None) => Some(""),
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
             Self::Close(Some(frame)) => Some(&frame.reason),
         }
     }
@@ -102,7 +102,7 @@ impl fmt::Display for Message {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 impl From<CloseFrame> for TungsteniteCloseFrame {
     fn from(frame: CloseFrame) -> Self {
         Self {
@@ -112,7 +112,7 @@ impl From<CloseFrame> for TungsteniteCloseFrame {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 impl From<Message> for TungsteniteMessage {
     fn from(msg: Message) -> Self {
         match msg {
@@ -125,7 +125,7 @@ impl From<Message> for TungsteniteMessage {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 impl From<TungsteniteCloseFrame> for CloseFrame {
     fn from(frame: TungsteniteCloseFrame) -> Self {
         Self {
