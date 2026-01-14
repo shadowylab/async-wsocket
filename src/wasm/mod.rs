@@ -31,7 +31,7 @@ pub async fn connect(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
     let (_ws, stream) = time::timeout(Some(timeout), WasmWebSocket::connect(url))
         .await
         .ok_or(Error::Timeout)??;
-    Ok(WebSocket::Wasm(stream))
+    Ok(WebSocket::wasm(stream))
 }
 
 /// Helper function to reduce code bloat

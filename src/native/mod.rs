@@ -57,7 +57,7 @@ async fn connect_direct(url: &Url, timeout: Duration) -> Result<WebSocket, Error
     ))
     .await
     .map_err(|_| Error::Timeout)??;
-    Ok(WebSocket::Tokio(Box::new(stream)))
+    Ok(WebSocket::tokio(Box::new(stream)))
 }
 
 #[cfg(feature = "socks")]
@@ -81,7 +81,7 @@ async fn connect_proxy(
     ))
     .await
     .map_err(|_| Error::Timeout)??;
-    Ok(WebSocket::Tokio(Box::new(stream)))
+    Ok(WebSocket::tokio(Box::new(stream)))
 }
 
 #[cfg(feature = "tor")]
@@ -104,7 +104,7 @@ async fn connect_tor(
     ))
     .await
     .map_err(|_| Error::Timeout)??;
-    Ok(WebSocket::Tor(Box::new(stream)))
+    Ok(WebSocket::tor(Box::new(stream)))
 }
 
 #[inline]
