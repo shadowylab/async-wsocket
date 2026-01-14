@@ -149,18 +149,6 @@ impl WsStream {
     pub fn ready_state(&self) -> Result<WsState, Error> {
         self.ws.ready_state().try_into()
     }
-
-    /// Access the wrapped [web_sys::WebSocket](https://docs.rs/web-sys/0.3.25/web_sys/struct.WebSocket.html) directly.
-    ///
-    /// _ws_stream_wasm_ tries to expose all useful functionality through an idiomatic rust API, so hopefully
-    /// you won't need this, however if I missed something, you can.
-    ///
-    /// ## Caveats
-    /// If you call `set_onopen`, `set_onerror`, `set_onmessage` or `set_onclose` on this, you will overwrite
-    /// the event listeners from `ws_stream_wasm`, and things will break.
-    pub fn wrapped(&self) -> &WebSocket {
-        &self.ws
-    }
 }
 
 impl fmt::Debug for WsStream {
