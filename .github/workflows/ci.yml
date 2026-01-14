@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ master ]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   fmt:
     name: Format
@@ -16,14 +13,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install nightly toolchain
+        run: rustup install nightly
+
+      - name: Add rustfmt for nightly
+        run: rustup component add rustfmt --toolchain nightly
+
       - name: Check
-        run: make check-fmt
+        run: cargo +nightly fmt --all --check -- --config format_code_in_doc_comments=true
 
   check:
-    name: Check
+    name: Check crates
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        args:
+          - ""
+          - --features tor
+          - --features socks
+          - --target wasm32-unknown-unknown
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Check
-      run: make check
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          key: ${{ matrix.args }}
+
+      - name: Check
+        run: cargo check ${{ matrix.args }}
+
+      - name: Clippy
+        run: cargo clippy ${{ matrix.args }} -- -D warnings
+
+      - name: Test
+        if: "!contains(matrix.crate, 'wasm32-')"
+        run: cargo test -p ${{ matrix.crate }}
