@@ -3,7 +3,6 @@
 
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::time::Duration;
 
 #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
 use arti_client::DataStream;
@@ -58,16 +57,12 @@ impl WebSocket {
         Self::new(InnerWebSocket::Wasm(inner))
     }
 
-    pub async fn connect(
-        url: &Url,
-        _mode: &ConnectionMode,
-        timeout: Duration,
-    ) -> Result<Self, Error> {
+    pub async fn connect(url: &Url, _mode: &ConnectionMode) -> Result<Self, Error> {
         #[cfg(not(target_arch = "wasm32"))]
-        let socket: WebSocket = crate::native::connect(url, _mode, timeout).await?;
+        let socket: WebSocket = crate::native::connect(url, _mode).await?;
 
         #[cfg(target_arch = "wasm32")]
-        let socket: WebSocket = crate::wasm::connect(url, timeout).await?;
+        let socket: WebSocket = crate::wasm::connect(url).await?;
 
         Ok(socket)
     }

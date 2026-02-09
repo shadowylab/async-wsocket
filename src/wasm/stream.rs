@@ -10,11 +10,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll, Waker};
 
-use async_utility::task;
 use futures::prelude::{Sink, Stream};
 use futures::{ready, FutureExt, StreamExt};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::spawn_local;
 use web_sys::{CloseEvent as JsCloseEvt, WebSocket, *};
 
 use crate::message::Message;
@@ -129,7 +129,7 @@ impl WsStream {
             }
         };
 
-        task::spawn(wake_on_close);
+        spawn_local(wake_on_close);
 
         Self {
             ws,

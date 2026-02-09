@@ -12,10 +12,9 @@ const NONCE: u64 = 123456789;
 async fn main() {
     let url =
         Url::parse("ws://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion").unwrap();
-    let mut socket: WebSocket =
-        WebSocket::connect(&url, &ConnectionMode::tor(), Duration::from_secs(120))
-            .await
-            .unwrap();
+    let mut socket: WebSocket = WebSocket::connect(&url, &ConnectionMode::tor())
+        .await
+        .unwrap();
 
     // Split sink and stream
     // let (mut tx, mut rx) = socket.split();

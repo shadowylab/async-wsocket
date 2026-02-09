@@ -6,10 +6,8 @@
 
 #![allow(clippy::arc_with_non_send_sync)]
 
-use std::time::Duration;
-
-use async_utility::{task, time};
 use url::Url;
+use wasm_bindgen_futures::spawn_local;
 
 mod error;
 mod event;
@@ -27,16 +25,14 @@ use self::state::WsState;
 pub(crate) use self::stream::WsStream;
 use crate::socket::WebSocket;
 
-pub async fn connect(url: &Url, timeout: Duration) -> Result<WebSocket, Error> {
-    let (_ws, stream) = time::timeout(Some(timeout), WasmWebSocket::connect(url))
-        .await
-        .ok_or(Error::Timeout)??;
+pub async fn connect(url: &Url) -> Result<WebSocket, Error> {
+    let (_ws, stream) = WasmWebSocket::connect(url).await?;
     Ok(WebSocket::wasm(stream))
 }
 
 /// Helper function to reduce code bloat
 pub(crate) fn notify(pharos: SharedPharos<WsEvent>, evt: WsEvent) {
-    task::spawn(async move {
+    spawn_local(async move {
         pharos
             .notify(evt)
             .await

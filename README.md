@@ -15,7 +15,7 @@ async fn main() {
     let url =
         Url::parse("wss://relay.damus.io").unwrap();
     let mut socket: WebSocket =
-        WebSocket::connect(&url, &ConnectionMode::direct(), Duration::from_secs(60))
+        WebSocket::connect(&url, &ConnectionMode::direct())
             .await
             .unwrap();
 

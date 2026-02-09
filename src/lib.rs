@@ -11,7 +11,6 @@
 use std::net::SocketAddr;
 #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 pub use futures_util;
 pub use url::{self, Url};
@@ -90,10 +89,6 @@ impl ConnectionMode {
 
 /// Connect
 #[inline]
-pub async fn connect(
-    url: &Url,
-    mode: &ConnectionMode,
-    timeout: Duration,
-) -> Result<WebSocket, Error> {
-    WebSocket::connect(url, mode, timeout).await
+pub async fn connect(url: &Url, mode: &ConnectionMode) -> Result<WebSocket, Error> {
+    WebSocket::connect(url, mode).await
 }
