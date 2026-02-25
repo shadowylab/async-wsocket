@@ -13,6 +13,8 @@ use super::tor;
 pub enum Error {
     /// Ws error
     Ws(WsError),
+    /// I/O error
+    Io(std::io::Error),
     /// Socks error
     #[cfg(feature = "socks")]
     Socks(tokio_socks::Error),
@@ -31,6 +33,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ws(e) => write!(f, "{e}"),
+            Self::Io(e) => write!(f, "{e}"),
             #[cfg(feature = "socks")]
             Self::Socks(e) => write!(f, "{e}"),
             #[cfg(feature = "tor")]
@@ -44,6 +47,12 @@ impl fmt::Display for Error {
 impl From<WsError> for Error {
     fn from(e: WsError) -> Self {
         Self::Ws(e)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
     }
 }
 
@@ -63,13 +72,11 @@ impl From<tor::Error> for Error {
 
 impl Error {
     #[inline]
-    #[cfg(any(feature = "socks", feature = "tor"))]
     pub(super) fn empty_host() -> Self {
         Self::Url(ParseError::EmptyHost)
     }
 
     #[inline]
-    #[cfg(any(feature = "socks", feature = "tor"))]
     pub(super) fn invalid_port() -> Self {
         Self::Url(ParseError::InvalidPort)
     }
