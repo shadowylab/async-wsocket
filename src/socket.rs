@@ -22,6 +22,7 @@ use crate::{ConnectionMode, Error, Message};
 #[cfg(not(target_arch = "wasm32"))]
 type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
 
+#[allow(clippy::large_enum_variant)]
 pub enum WebSocket {
     #[cfg(not(target_arch = "wasm32"))]
     Tokio(WsStream<TcpStream>),
