@@ -4,8 +4,6 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-#[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-use arti_client::DataStream;
 use futures_util::{Sink, Stream};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::net::TcpStream;
@@ -23,8 +21,6 @@ type WsStream<T> = WebSocketStream<MaybeTlsStream<T>>;
 enum InnerWebSocket {
     #[cfg(not(target_arch = "wasm32"))]
     Tokio(Box<WsStream<TcpStream>>),
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    Tor(Box<WsStream<DataStream>>),
     #[cfg(target_arch = "wasm32")]
     Wasm(WsStream),
 }
@@ -44,13 +40,6 @@ impl WebSocket {
     pub(crate) fn tokio(inner: Box<WsStream<TcpStream>>) -> Self {
         Self::new(InnerWebSocket::Tokio(inner))
     }
-
-    #[inline]
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    pub(crate) fn tor(inner: Box<WsStream<DataStream>>) -> Self {
-        Self::new(InnerWebSocket::Tor(inner))
-    }
-
     #[inline]
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn wasm(inner: WsStream) -> Self {
@@ -75,8 +64,6 @@ impl Sink<Message> for WebSocket {
         match &mut self.inner {
             #[cfg(not(target_arch = "wasm32"))]
             InnerWebSocket::Tokio(s) => Pin::new(s.as_mut()).poll_ready(cx).map_err(Into::into),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => Pin::new(s.as_mut()).poll_ready(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => Pin::new(s).poll_ready(cx),
         }
@@ -88,10 +75,6 @@ impl Sink<Message> for WebSocket {
             InnerWebSocket::Tokio(s) => Pin::new(s.as_mut())
                 .start_send(item.into())
                 .map_err(Into::into),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => Pin::new(s.as_mut())
-                .start_send(item.into())
-                .map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => Pin::new(s).start_send(item),
         }
@@ -101,8 +84,6 @@ impl Sink<Message> for WebSocket {
         match &mut self.inner {
             #[cfg(not(target_arch = "wasm32"))]
             InnerWebSocket::Tokio(s) => Pin::new(s.as_mut()).poll_flush(cx).map_err(Into::into),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => Pin::new(s.as_mut()).poll_flush(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => Pin::new(s).poll_flush(cx),
         }
@@ -112,8 +93,6 @@ impl Sink<Message> for WebSocket {
         match &mut self.inner {
             #[cfg(not(target_arch = "wasm32"))]
             InnerWebSocket::Tokio(s) => Pin::new(s.as_mut()).poll_close(cx).map_err(Into::into),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => Pin::new(s.as_mut()).poll_close(cx).map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => Pin::new(s).poll_close(cx).map_err(Into::into),
         }
@@ -130,11 +109,6 @@ impl Stream for WebSocket {
                 .poll_next(cx)
                 .map(|i| i.map(|res| res.map(Message::from_native)))
                 .map_err(Into::into),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => Pin::new(s)
-                .poll_next(cx)
-                .map(|i| i.map(|res| res.map(Message::from_native)))
-                .map_err(Into::into),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => Pin::new(s).poll_next(cx).map_err(Into::into),
         }
@@ -144,8 +118,6 @@ impl Stream for WebSocket {
         match &self.inner {
             #[cfg(not(target_arch = "wasm32"))]
             InnerWebSocket::Tokio(s) => s.size_hint(),
-            #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-            InnerWebSocket::Tor(s) => s.size_hint(),
             #[cfg(target_arch = "wasm32")]
             InnerWebSocket::Wasm(s) => s.size_hint(),
         }

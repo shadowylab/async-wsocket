@@ -30,7 +30,6 @@ jobs:
       matrix:
         args:
           - ""
-          - --features tor
           - --features socks
           - --target wasm32-unknown-unknown
     steps:

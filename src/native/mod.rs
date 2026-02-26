@@ -4,12 +4,8 @@
 //! Native
 
 use std::net::SocketAddr;
-#[cfg(feature = "tor")]
-use std::path::PathBuf;
 use std::time::Duration;
 
-#[cfg(feature = "tor")]
-use arti_client::DataStream;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::protocol::Role;
@@ -20,8 +16,6 @@ use url::Url;
 mod error;
 #[cfg(feature = "socks")]
 mod socks;
-#[cfg(feature = "tor")]
-pub mod tor;
 
 pub use self::error::Error;
 #[cfg(feature = "socks")]
@@ -34,8 +28,6 @@ pub async fn connect(url: &Url, mode: &ConnectionMode) -> Result<WebSocket, Erro
         ConnectionMode::Direct => connect_direct(url).await,
         #[cfg(feature = "socks")]
         ConnectionMode::Proxy(proxy) => connect_proxy(url, *proxy).await,
-        #[cfg(feature = "tor")]
-        ConnectionMode::Tor { custom_path } => connect_tor(url, custom_path.as_ref()).await,
     }
 }
 
@@ -200,20 +192,6 @@ async fn connect_proxy(url: &Url, proxy: SocketAddr) -> Result<WebSocket, Error>
     // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
     let (stream, _) = Box::pin(tokio_tungstenite::client_async_tls(url.as_str(), conn)).await?;
     Ok(WebSocket::tokio(Box::new(stream)))
-}
-
-#[cfg(feature = "tor")]
-async fn connect_tor(url: &Url, custom_path: Option<&PathBuf>) -> Result<WebSocket, Error> {
-    let host: &str = url.host_str().ok_or_else(Error::empty_host)?;
-    let port: u16 = url
-        .port_or_known_default()
-        .ok_or_else(Error::invalid_port)?;
-
-    let conn: DataStream = tor::connect(host, port, custom_path).await?;
-    // NOT REMOVE `Box::pin`!
-    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
-    let (stream, _) = Box::pin(tokio_tungstenite::client_async_tls(url.as_str(), conn)).await?;
-    Ok(WebSocket::tor(Box::new(stream)))
 }
 
 #[inline]

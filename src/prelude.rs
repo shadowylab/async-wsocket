@@ -9,6 +9,4 @@
 #![doc(hidden)]
 
 pub use crate::message::*;
-#[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-pub use crate::native::tor::{self, *};
 pub use crate::*;

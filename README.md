@@ -1,6 +1,6 @@
 # Async WebSocket
 
-A convenience library for using websockets both in native and WASM environments! Include embedded tor client support.
+A convenience library for using websockets both in native and WASM environments!
 
 ```rust,no_run
 use std::time::Duration;
@@ -44,13 +44,11 @@ The following crate feature flags are available:
 | Feature               | Default | Description                                                             |
 |-----------------------|:-------:|-------------------------------------------------------------------------|
 | `socks`               |   No    | Enable `socks` proxy support                                            |
-| `tor`                 |   No    | Enable embedded tor client support                                      |
-| `tor-launch-service ` |   No    | Enable embedded tor client with support to launch hidden onion services |
 
 ## Minimum Supported Rust Version (MSRV)
 
 The MSRV for this project when compiled with `default` features and on `native` targets is `1.63.0`. 
-When using `tor` feature, MSRV is `1.70.0`. MSRV for WASM targets is `1.73.0`
+MSRV for WASM targets is `1.73.0`
 
 ## License
 

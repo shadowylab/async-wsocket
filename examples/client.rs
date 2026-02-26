@@ -8,9 +8,8 @@ const NONCE: u64 = 123456789;
 
 #[tokio::main]
 async fn main() {
-    let url =
-        Url::parse("ws://oxtrdevav64z64yb7x6rjg4ntzqjhedm5b5zjqulugknhzr46ny2qbad.onion").unwrap();
-    let mut socket: WebSocket = WebSocket::connect(&url, &ConnectionMode::tor())
+    let url = Url::parse("wss://relay.damus.io").unwrap();
+    let mut socket: WebSocket = WebSocket::connect(&url, &ConnectionMode::direct())
         .await
         .unwrap();
 

@@ -6,9 +6,6 @@ use core::fmt;
 use tokio_tungstenite::tungstenite::Error as WsError;
 use url::ParseError;
 
-#[cfg(feature = "tor")]
-use super::tor;
-
 #[derive(Debug)]
 pub enum Error {
     /// Ws error
@@ -18,9 +15,6 @@ pub enum Error {
     /// Socks error
     #[cfg(feature = "socks")]
     Socks(tokio_socks::Error),
-    /// Tor error
-    #[cfg(feature = "tor")]
-    Tor(tor::Error),
     /// Url parse error
     Url(ParseError),
     /// Timeout
@@ -36,8 +30,6 @@ impl fmt::Display for Error {
             Self::Io(e) => write!(f, "{e}"),
             #[cfg(feature = "socks")]
             Self::Socks(e) => write!(f, "{e}"),
-            #[cfg(feature = "tor")]
-            Self::Tor(e) => write!(f, "{e}"),
             Self::Url(e) => write!(f, "{e}"),
             Self::Timeout => write!(f, "timeout"),
         }
@@ -60,13 +52,6 @@ impl From<std::io::Error> for Error {
 impl From<tokio_socks::Error> for Error {
     fn from(e: tokio_socks::Error) -> Self {
         Self::Socks(e)
-    }
-}
-
-#[cfg(feature = "tor")]
-impl From<tor::Error> for Error {
-    fn from(e: tor::Error) -> Self {
-        Self::Tor(e)
     }
 }
 

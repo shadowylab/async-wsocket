@@ -9,8 +9,6 @@
 
 #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
 use std::net::SocketAddr;
-#[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-use std::path::{Path, PathBuf};
 
 pub use futures_util;
 pub use url::{self, Url};
@@ -38,14 +36,6 @@ pub enum ConnectionMode {
     /// Custom proxy
     #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
     Proxy(SocketAddr),
-    /// Embedded tor client
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    Tor {
-        /// Path for cache and state data
-        ///
-        /// Mandatory for `android` and `ios` targets!
-        custom_path: Option<PathBuf>,
-    },
 }
 
 impl ConnectionMode {
@@ -60,30 +50,6 @@ impl ConnectionMode {
     #[cfg(all(feature = "socks", not(target_arch = "wasm32")))]
     pub fn proxy(addr: SocketAddr) -> Self {
         Self::Proxy(addr)
-    }
-
-    /// Embedded tor client
-    ///
-    /// This not work on `android` and/or `ios` targets.
-    /// Use [`Connection::tor_with_path`] instead.
-    #[inline]
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    pub fn tor() -> Self {
-        Self::Tor { custom_path: None }
-    }
-
-    /// Embedded tor client
-    ///
-    /// Specify a path where to store data
-    #[inline]
-    #[cfg(all(feature = "tor", not(target_arch = "wasm32")))]
-    pub fn tor_with_path<P>(data_path: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        Self::Tor {
-            custom_path: Some(data_path.as_ref().to_path_buf()),
-        }
     }
 }
 
