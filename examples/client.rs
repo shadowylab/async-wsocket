@@ -1,8 +1,6 @@
 // Copyright (c) 2022-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::time::Duration;
-
 use async_wsocket::prelude::*;
 use futures_util::{SinkExt, StreamExt};
 
