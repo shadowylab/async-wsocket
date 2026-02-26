@@ -66,9 +66,7 @@ async fn connect_direct(url: &Url) -> Result<WebSocket, Error> {
 /// first and starts the other family after a 250ms delay if the first hasn't
 /// connected yet. Uses whichever connection succeeds first.
 async fn happy_eyeballs_connect(host: &str, port: u16) -> Result<TcpStream, Error> {
-    let addrs: Vec<SocketAddr> = tokio::net::lookup_host(format!("{host}:{port}"))
-        .await?
-        .collect();
+    let addrs: Vec<SocketAddr> = tokio::net::lookup_host((host, port)).await?.collect();
 
     if addrs.is_empty() {
         return Err(std::io::Error::new(
@@ -109,10 +107,10 @@ async fn happy_eyeballs_connect(host: &str, port: u16) -> Result<TcpStream, Erro
     // Phase 1: Give IPv6 a 250ms head start
     tokio::select! {
         result = &mut ipv6_fut => {
-            match result {
-                Ok(stream) => return Ok(stream),
+            return match result {
+                Ok(stream) => Ok(stream),
                 // IPv6 failed fast, try IPv4 directly
-                Err(_) => return try_addrs_sequential(&ipv4).await,
+                Err(_) => try_addrs_sequential(&ipv4).await,
             }
         }
         _ = tokio::time::sleep(HAPPY_EYEBALLS_DELAY) => {
