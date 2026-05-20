@@ -41,9 +41,15 @@ async fn main() {
 
 The following crate feature flags are available:
 
-| Feature               | Default | Description                                                             |
-|-----------------------|:-------:|-------------------------------------------------------------------------|
-| `socks`               |   No    | Enable `socks` proxy support                                            |
+| Feature                    | Default | Description                                                |
+|----------------------------|:-------:|------------------------------------------------------------|
+| `aws_lc_rs`                |   No    | Enable the Rustls `aws_lc_rs` crypto provider              |
+| `native-tls`               |   No    | Enable native TLS support                                  |
+| `native-tls-vendored`      |   No    | Enable vendored native TLS support                         |
+| `ring`                     |   Yes   | Enable the Rustls `ring` crypto provider                   |
+| `rustls-tls-native-roots`  |   No    | Enable Rustls TLS support with native root certificates    |
+| `rustls-tls-webpki-roots`  |   Yes   | Enable Rustls TLS support with `webpki-roots` certificates |
+| `socks`                    |   No    | Enable `socks` proxy support                               |
 
 ## Minimum Supported Rust Version (MSRV)
 

@@ -10,6 +10,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::protocol::Role;
 pub use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::MaybeTlsStream;
 pub use tokio_tungstenite::WebSocketStream;
 use url::Url;
 
@@ -41,14 +42,7 @@ async fn connect_direct(url: &Url) -> Result<WebSocket, Error> {
 
     let tcp_stream: TcpStream = tokio_happy_eyeballs::connect(host).await?;
 
-    // NOT REMOVE `Box::pin`!
-    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
-    let (stream, _) = Box::pin(tokio_tungstenite::client_async_tls(
-        url.as_str(),
-        tcp_stream,
-    ))
-    .await?;
-    Ok(WebSocket::tokio(Box::new(stream)))
+    connect_stream(url, tcp_stream).await
 }
 
 #[cfg(feature = "socks")]
@@ -60,10 +54,53 @@ async fn connect_proxy(url: &Url, proxy: SocketAddr) -> Result<WebSocket, Error>
     let addr: String = format!("{host}:{port}");
 
     let conn: TcpStream = TcpSocks5Stream::connect(proxy, addr).await?;
-    // NOT REMOVE `Box::pin`!
-    // Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
-    let (stream, _) = Box::pin(tokio_tungstenite::client_async_tls(url.as_str(), conn)).await?;
+    connect_stream(url, conn).await
+}
+
+async fn connect_stream(url: &Url, stream: TcpStream) -> Result<WebSocket, Error> {
+    let stream = client_async(url, stream).await?;
     Ok(WebSocket::tokio(Box::new(stream)))
+}
+
+// NOT REMOVE `Box::pin`!
+// Use `Box::pin` to fix stack overflow on windows targets due to large `Future`
+#[cfg(any(
+    feature = "native-tls",
+    feature = "native-tls-vendored",
+    feature = "rustls-tls-native-roots",
+    feature = "rustls-tls-webpki-roots"
+))]
+async fn client_async(
+    url: &Url,
+    stream: TcpStream,
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, Error> {
+    let (stream, _) = Box::pin(tokio_tungstenite::client_async_tls(url.as_str(), stream)).await?;
+    Ok(stream)
+}
+
+#[cfg(not(any(
+    feature = "native-tls",
+    feature = "native-tls-vendored",
+    feature = "rustls-tls-native-roots",
+    feature = "rustls-tls-webpki-roots"
+)))]
+async fn client_async(
+    url: &Url,
+    stream: TcpStream,
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, Error> {
+    if url.scheme() == "wss" {
+        return Err(tokio_tungstenite::tungstenite::Error::Url(
+            tokio_tungstenite::tungstenite::error::UrlError::TlsFeatureNotEnabled,
+        )
+        .into());
+    }
+
+    let (stream, _) = Box::pin(tokio_tungstenite::client_async(
+        url.as_str(),
+        MaybeTlsStream::Plain(stream),
+    ))
+    .await?;
+    Ok(stream)
 }
 
 #[inline]
